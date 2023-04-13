@@ -3,8 +3,9 @@ title: "Figure 2. Barplot"
 author: "Nina Montoya"
 date: "12/4/2023"
 output:
-  pdf_document: default
-  html_document: default
+  html_document:
+    theme: united
+    highlight: tango
 ---
 
 ###Cargar librerias 
