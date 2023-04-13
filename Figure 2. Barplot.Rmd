@@ -1,0 +1,993 @@
+---
+title: "Figure 2. Barplot"
+author: "Nina Montoya"
+date: "12/4/2023"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+###Cargar librerias 
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+ library(dplyr)
+ library(pals)
+ library(RColorBrewer)
+ library(readr)
+ library(cowplot)
+```
+
+
+###Importar data
+-Otu table
+```{r}
+otu.transferencia.2600.completa<-read.csv("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/otutable.transferencia.completa.filterASVs.csv", check.names = F, row.names = 1)
+```
+
+###Eliminar ASV's con 0 counts de la otu original
+```{r}
+otu.transferencia.2600.completa.sin0 <- otu.transferencia.2600.completa %>%
+                                        filter(rowSums(across(where(is.numeric)))!=0) 
+```
+
+###Archivo de ids unassigned a filtrar de la otu table
+```{r}
+deleteIDS.unassigned <- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/listaASVs.p.filtrar.txt", check.names = F)
+```
+
+###Filtrar de la otu table, los 87 ids anteriores
+```{r}
+otu.transferencia.2600.filtrada <- otu.transferencia.2600.completa.sin0 %>% 
+                                   rownames_to_column(var = "OTUID") %>% 
+                                   filter(!OTUID %in% deleteIDS.unassigned$OTUID)
+
+otu.transferencia.2600.filtrada<- otu.transferencia.2600.filtrada %>% 
+                                  column_to_rownames(var = "OTUID")
+```
+
+###Metadata
+```{r}
+metadata.transferencia.2600.completo <- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/mapa.capII.transferencia.completo.txt", check.names = F) %>% 
+mutate(Type=factor(Origen, levels = c("Embryo","Mother","Control of aseptic technique"),
+                           labels = c("Embryo","Mother","Aseptic control")))
+```
+
+###Taxonomía
+```{r}
+taxonomia<- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/taxonomia.corridas123/taxonomy.tsv", check.names = F)
+```
+
+###Función para obtener abundancia relativa 
+```{r}
+relabunda<- function(x){(as.data.frame(t(t(x)/colSums(x)))*100)}
+```
+
+##PHYLUM
+###SMALL INTESTINE
+-Separar tablas y escoger los 10 phyla más abundates de cada sección.
+-Otu table de intestino delgado.
+```{r, warning=FALSE, message=FALSE}
+otutable_intestine<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>% 
+                    rownames_to_column(var = "OTUID") %>%
+                    inner_join(metadata.transferencia.2600.completo) %>%
+                    filter(Seccion=="Ileon")
+```
+
+```{r, warning=FALSE, message=FALSE}
+intestine_phylum_10<- otutable_intestine %>%
+                      dplyr::select(-BarcodeSequence:-Type) %>%
+                      column_to_rownames(var = "OTUID") %>%
+                      t() %>% 
+                      as.data.frame() %>%
+                      rownames_to_column(var ="OTUID") %>% 
+                      inner_join(taxonomia) %>%
+                      separate(taxonomy, c("k", "p", "c", "o", "f", "g","s"),sep=";") %>% 
+                      group_by(p) %>% 
+                      summarise_if(is.numeric,sum) %>% 
+                      dplyr::select(-Confidence) %>% 
+                      column_to_rownames(var = "p") %>%
+                      relabunda() %>% 
+                      mutate(mean=rowMeans(.)) %>% 
+                      arrange(desc(mean)) 
+
+```
+
+###MOUTH
+-Otu table de boca
+```{r, warning=FALSE, message=FALSE}
+otutable_boca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+               rownames_to_column(var = "OTUID") %>% 
+               inner_join(metadata.transferencia.2600.completo) %>%
+               filter(Seccion=="Boca")
+```
+
+```{r, warning=FALSE, message=FALSE}
+boca_phylum_10<- otutable_boca %>%
+                 dplyr::select(-BarcodeSequence:-Type) %>%
+                 column_to_rownames(var = "OTUID") %>%
+                 t() %>% 
+                 as.data.frame() %>%
+                 rownames_to_column(var = "OTUID") %>% 
+                 inner_join(taxonomia) %>% 
+                 separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                 group_by(p) %>% 
+                 summarise_if(is.numeric,sum) %>% 
+                 dplyr::select(-Confidence) %>% 
+                 column_to_rownames(var = "p") %>%
+                 relabunda() %>% 
+                 mutate(mean=rowMeans(.)) %>% 
+                 arrange(desc(mean)) 
+```
+
+###CLOACA
+-Otu table de cloaca
+```{r, warning=FALSE, message=FALSE}
+otutable_cloaca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+                 rownames_to_column(var = "OTUID") %>%
+                 inner_join(metadata.transferencia.2600.completo) %>%
+                 filter(Seccion=="Cloaca")
+```
+
+```{r, warning=FALSE, message=FALSE}
+cloaca_phylum_10<- otutable_cloaca %>%
+                   dplyr::select(-BarcodeSequence:-Type) %>%
+                   column_to_rownames(var = "OTUID") %>% 
+                   t() %>% 
+                   as.data.frame() %>% rownames_to_column(var = "OTUID") %>% 
+                   inner_join(taxonomia) %>%
+                   separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                   group_by(p) %>% 
+                   summarise_if(is.numeric,sum) %>% 
+                   dplyr::select(-Confidence) %>% 
+                   column_to_rownames(var = "p") %>%
+                   relabunda() %>% 
+                   mutate(mean=rowMeans(.)) %>% 
+                   arrange(desc(mean)) 
+```
+
+###VENTRAL BODY REGION 
+-Otu table de región ventral del cuerpo
+```{r, warning=FALSE, message=FALSE}
+otutable_dorso<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+                rownames_to_column(var = "OTUID") %>%
+                inner_join(metadata.transferencia.2600.completo) %>%
+                filter(Seccion=="Dorso")
+```
+
+```{r, warning=FALSE, message=FALSE}
+dorso_phylum_10<- otutable_dorso %>%
+                  dplyr::select(-BarcodeSequence:-Type) %>%
+                  column_to_rownames(var = "OTUID") %>%
+                  t() %>% 
+                  as.data.frame() %>% 
+                  rownames_to_column(var = "OTUID") %>% 
+                  inner_join(taxonomia) %>%
+                  separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                  group_by(p) %>% 
+                  summarise_if(is.numeric,sum) %>% 
+                  dplyr::select(-Confidence) %>% 
+                  column_to_rownames(var = "p") %>%
+                  relabunda() %>% 
+                  mutate(mean=rowMeans(.)) %>% 
+                  arrange(desc(mean)) 
+```
+
+###AMNIOTIC FLUID
+-Otu table de líquido amniótico
+```{r, warning=FALSE, message=FALSE}
+otutable_LA<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="L.amniotico")
+```
+
+```{r, warning=FALSE, message=FALSE}
+LA_phylum_10<- otutable_LA %>%
+               dplyr::select(-BarcodeSequence:-Type) %>%
+               column_to_rownames(var = "OTUID") %>% 
+               t() %>% 
+               as.data.frame() %>% 
+               rownames_to_column(var = "OTUID") %>% 
+               inner_join(taxonomia) %>% 
+               separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+               group_by(p) %>% 
+               summarise_if(is.numeric,sum) %>% 
+               dplyr::select(-Confidence) %>% 
+               column_to_rownames(var = "p") %>%
+               relabunda() %>% 
+               mutate(mean=rowMeans(.)) %>% 
+               arrange(desc(mean)) 
+```
+
+###MEMBRANE
+-Otu table de membrana
+```{r, warning=FALSE, message=FALSE}
+otutable_ME<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join( metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="Membrana")
+```
+
+```{r, warning=FALSE, message=FALSE}
+ME_phylum_10<- otutable_ME %>%
+               dplyr::select(-BarcodeSequence:-Type) %>%
+               column_to_rownames(var = "OTUID") %>%
+               t() %>% 
+               as.data.frame() %>% 
+               rownames_to_column(var = "OTUID") %>% 
+               inner_join(taxonomia) %>%
+               separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+               group_by(p) %>% 
+               summarise_if(is.numeric,sum) %>% 
+               dplyr::select(-Confidence) %>% 
+               column_to_rownames(var = "p") %>%
+               relabunda() %>% 
+               mutate(mean=rowMeans(.)) %>% 
+               arrange(desc(mean)) 
+```
+
+###YOLK
+-Otu table de yema
+```{r, warning=FALSE, message=FALSE}
+otutable_YE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="Yema")
+```
+
+```{r, warning=FALSE, message=FALSE}
+YE_phylum_10<- otutable_YE %>% 
+               dplyr::select(-BarcodeSequence:-Type) %>%
+               column_to_rownames(var = "OTUID") %>%
+               t() %>% 
+               as.data.frame() %>%
+               rownames_to_column(var = "OTUID") %>% 
+               inner_join(taxonomia) %>%
+               separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+               group_by(p) %>% 
+               summarise_if(is.numeric,sum) %>% 
+               dplyr::select(-Confidence) %>% 
+               column_to_rownames(var = "p") %>%
+               relabunda() %>% 
+               mutate(mean=rowMeans(.)) %>% 
+               arrange(desc(mean)) 
+```
+
+###EMBRYONIC TRACT
+-Otu table de tracto embrionario 
+```{r, warning=FALSE, message=FALSE}
+otutable_TE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="Tracto.embrionario")
+```
+
+```{r, warning=FALSE, message=FALSE}
+TE_phylum_10<- otutable_TE %>%
+               dplyr::select(-BarcodeSequence:-Type) %>%
+               column_to_rownames(var = "OTUID") %>%
+               t() %>% 
+               as.data.frame() %>% 
+               rownames_to_column(var = "OTUID") %>% 
+               inner_join(taxonomia) %>% 
+               separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+               group_by(p) %>% 
+               summarise_if(is.numeric,sum) %>% 
+               dplyr::select(-Confidence) %>% 
+               column_to_rownames(var = "p") %>%
+               relabunda() %>% 
+               mutate(mean=rowMeans(.)) %>% 
+               arrange(desc(mean)) 
+```
+
+####Unir todo
+```{r, message=FALSE, warning=FALSE}
+phylum_all<- boca_phylum_10 %>% rownames_to_column(var = "id") %>%
+             full_join(cloaca_phylum_10 %>% rownames_to_column(var="id")) %>%
+             full_join(intestine_phylum_10 %>% rownames_to_column(var="id")) %>%
+             full_join(dorso_phylum_10 %>% rownames_to_column(var="id")) %>%
+             full_join(LA_phylum_10 %>% rownames_to_column(var="id")) %>%
+             full_join(ME_phylum_10 %>% rownames_to_column(var="id")) %>% 
+             full_join(YE_phylum_10 %>% rownames_to_column(var="id")) %>%
+             full_join(TE_phylum_10 %>% rownames_to_column(var="id"))
+lista.phylum<- unique(phylum_all$id)
+phylum_all_final<- otu.transferencia.2600.filtrada %>%
+                   rownames_to_column(var = "OTUID") %>% 
+                   inner_join(taxonomia) %>%
+                   separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>%
+                   group_by(p) %>%
+                   summarise_if(is.numeric,sum) %>% 
+                   dplyr::select(-Confidence) %>% 
+                   column_to_rownames(var = "p") %>%
+                   relabunda() %>%
+                   rownames_to_column(var = "phylum") %>% 
+                   filter(phylum %in% lista.phylum)
+```
+
+####Preparar archivo
+```{r, message=FALSE}
+phylum_plot<- phylum_all_final %>%
+pivot_longer(cols=-phylum, names_to = "OTUID", values_to="realbunda") %>% 
+inner_join(metadata.transferencia.2600.completo) %>%
+mutate(phylum=str_replace(phylum,"p__", "")) %>%
+mutate(Seccion2=factor(Seccion, levels=c("L.amniotico","Tracto.embrionario","Membrana","Yema",
+                                         "Boca","Cloaca","Ileon","Dorso"),
+                                labels = c("Amniotic fluid","Embryonic tract","Membrane","Yolk",
+                                    "Mouth","Cloaca","Small \n intestine","Aseptic ventral \n skin"))) %>%
+mutate(Type=factor(Origen, levels=c("Embryo","Mother","Control of aseptic technique"),
+                           labels =c("Embryo","Mother","Aseptic control")))
+```
+
+####FIGURA PHYLUM
+-Definir colores para aumentar la n 
+```{r, warning=FALSE, message=FALSE}
+library(RColorBrewer)
+library(ggh4x)
+colors <- 30
+mycolors = colorRampPalette(brewer.pal(12, "Set3"))(colors) 
+#Modidificar un color específico 
+mycolors[6]<- "#f2a687"
+```
+
+-Horizontal strips
+```{r}
+ridiculous_strips <- strip_themed(background_x=elem_list_rect(fill=c("#2F4F4F","#698B69",
+                                  "#458B74","#B4EEB4","#5D478B","#8B668B","#CDB5CD","#4A708B")),
+                                  by_layer_x = FALSE)
+```
+
+-Figura
+```{r, eval=FALSE}
+  pp<- phylum_plot %>% ggplot(aes(x=`OTUID`, y=realbunda, fill=phylum))+
+  geom_col()+ 
+  facet_grid2(.~Seccion2, scales = "free", space = "free",  strip = ridiculous_strips)+
+  labs(y="Relative abundance (%)") +
+  geom_bar(stat = "identity", position="stack", color="black", lwd=0.15) +    
+  guides(fill= guide_legend(title = "Phylum")) +
+  scale_fill_manual(values = mycolors) +
+  theme(##font de los géneros: leyenda
+    legend.text = element_text(colour = "black", size = 8, family = "Helvetica"),
+    legend.key.size = unit(0.35, "cm"),
+    legend.key.width = unit(0.35,"cm"),
+    legend.box = "vertical",
+    legend.position = "right",
+    ## títulos de los ejes
+    axis.title.y = element_text (color="black", size=9, family = "Helvetica", hjust = 0.5,
+                                 face = "bold", margin =margin(t=0, r=10, b=0, l=0)),
+    #título del facet
+    strip.text.x = element_text(angle = 0,vjust = 0.5, hjust = 0.5, size = 8,
+                                family = "Helvetica", color = "white", face = "bold"),
+    legend.title = element_text(color="black", size=8, family = "Helvetica"), 
+    axis.text.x = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x =element_blank())+guides(fill=guide_legend(ncol=2, title = "Phylum"))
+  
+  pp
+```
+
+##CLASS 
+###SMALL INTESTINE
+-Separar tablas y escoger las 10 clases más abundates de cada sección.
+-Otu table de intestino delgado 
+```{r, warning=FALSE, message=FALSE}
+otutable_intestine<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+                    rownames_to_column(var = "OTUID") %>%
+                    inner_join(metadata.transferencia.2600.completo) %>%
+                    filter(Seccion=="Ileon")
+```
+
+```{r, warning=FALSE, message=FALSE}
+intestine_clase_10<- otutable_intestine %>% 
+                     dplyr::select(-BarcodeSequence:-Type) %>%
+                     column_to_rownames(var = "OTUID") %>%
+                     t() %>% 
+                     as.data.frame() %>% 
+                     rownames_to_column(var = "OTUID") %>% 
+                     inner_join(taxonomia) %>% 
+                     separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                     group_by(c) %>% 
+                     summarise_if(is.numeric,sum) %>% 
+                     dplyr::select(-Confidence) %>% 
+                     column_to_rownames(var = "c") %>%
+                     relabunda() %>% 
+                     mutate(mean=rowMeans(.)) %>% 
+                     arrange(desc(mean)) 
+```
+
+###MOUTH
+-Otu table de boca
+```{r, warning=FALSE, message=FALSE}
+otutable_boca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+               rownames_to_column(var = "OTUID") %>%
+               inner_join(metadata.transferencia.2600.completo) %>%
+               filter(Seccion=="Boca")
+```
+
+```{r, warning=FALSE, message=FALSE}
+boca_clase_10<- otutable_boca %>% 
+                dplyr::select(-BarcodeSequence:-Type) %>%
+                column_to_rownames(var = "OTUID") %>% 
+                t() %>% 
+                as.data.frame() %>%
+                rownames_to_column(var = "OTUID") %>% 
+                inner_join(taxonomia) %>%
+                separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                group_by(c) %>% 
+                summarise_if(is.numeric,sum) %>% 
+                dplyr::select(-Confidence) %>% 
+                column_to_rownames(var = "c") %>%
+                relabunda() %>% 
+                mutate(mean=rowMeans(.)) %>% 
+                arrange(desc(mean)) 
+```
+
+###CLOACA
+-Otu table de cloaca
+```{r, warning=FALSE, message=FALSE}
+otutable_cloaca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+                 rownames_to_column(var = "OTUID") %>%
+                 inner_join(metadata.transferencia.2600.completo) %>%
+                 filter(Seccion=="Cloaca")
+```
+
+```{r, warning=FALSE, message=FALSE}
+cloaca_clase_10<- otutable_cloaca %>%
+                  dplyr::select(-BarcodeSequence:-Type) %>%
+                  column_to_rownames(var = "OTUID") %>%
+                  t() %>% 
+                  as.data.frame() %>% 
+                  rownames_to_column(var = "OTUID") %>% 
+                  inner_join(taxonomia) %>% 
+                  separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                  group_by(c) %>% 
+                  summarise_if(is.numeric,sum) %>% 
+                  dplyr::select(-Confidence) %>% 
+                  column_to_rownames(var = "c") %>%
+                  relabunda() %>% 
+                  mutate(mean=rowMeans(.)) %>% 
+                  arrange(desc(mean)) 
+```
+
+### VENTRAL BODY REGION
+-Otu table de región ventral del cuerpo
+```{r, warning=FALSE, message=FALSE}
+otutable_dorso<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+                rownames_to_column(var = "OTUID") %>%
+                inner_join(metadata.transferencia.2600.completo) %>%
+                filter(Seccion=="Dorso")
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+dorso_clase_10<- otutable_dorso %>%
+                 dplyr::select(-BarcodeSequence:-Type) %>%
+                 column_to_rownames(var = "OTUID") %>%
+                 t() %>% 
+                 as.data.frame() %>% 
+                 rownames_to_column(var = "OTUID") %>% 
+                 inner_join(taxonomia) %>%
+                 separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                 group_by(c) %>% 
+                 summarise_if(is.numeric,sum) %>% 
+                 dplyr::select(-Confidence) %>% 
+                 column_to_rownames(var = "c") %>%
+                 relabunda() %>% 
+                 mutate(mean=rowMeans(.)) %>% 
+                 arrange(desc(mean)) 
+```
+
+###AMNIOTIC FLUID
+-Otu table de líquido amniótico
+```{r, warning=FALSE, message=FALSE}
+otutable_LA<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="L.amniotico")
+```
+
+```{r, warning=FALSE, message=FALSE}
+LA_clase_10<- otutable_LA %>% 
+              dplyr::select(-BarcodeSequence:-Type) %>%
+              column_to_rownames(var = "OTUID") %>% 
+              t() %>% 
+              as.data.frame() %>% 
+              rownames_to_column(var = "OTUID") %>% 
+              inner_join(taxonomia) %>% 
+              separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+              group_by(c) %>% 
+              summarise_if(is.numeric,sum) %>% 
+              dplyr::select(-Confidence) %>% 
+              column_to_rownames(var = "c") %>%
+              relabunda() %>% 
+              mutate(mean=rowMeans(.)) %>% 
+              arrange(desc(mean)) 
+```
+
+###MEMBRANE
+-Otu table de membrana
+```{r, warning=FALSE, message=FALSE}
+otutable_ME<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="Membrana")
+```
+
+```{r, warning=FALSE, message=FALSE}
+ME_clase_10<- otutable_ME %>% 
+              dplyr::select(-BarcodeSequence:-Type) %>%
+              column_to_rownames(var = "OTUID") %>%
+              t() %>% 
+              as.data.frame() %>%
+              rownames_to_column(var = "OTUID") %>% 
+              inner_join(taxonomia) %>%
+              separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+              group_by(c) %>% 
+              summarise_if(is.numeric,sum) %>% 
+              dplyr::select(-Confidence) %>% 
+              column_to_rownames(var = "c") %>%
+              relabunda() %>% 
+              mutate(mean=rowMeans(.)) %>% 
+              arrange(desc(mean)) 
+```
+
+###YOLK
+-Otu table de yema
+```{r, warning=FALSE, message=FALSE}
+otutable_YE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="Yema")
+```
+
+```{r, warning=FALSE, message=FALSE}
+YE_clase_10<- otutable_YE %>%
+              dplyr::select(-BarcodeSequence:-Type) %>%
+              column_to_rownames(var = "OTUID") %>%
+              t() %>% 
+              as.data.frame() %>%
+              rownames_to_column(var = "OTUID") %>% 
+              inner_join(taxonomia) %>% 
+              separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+              group_by(c) %>% 
+              summarise_if(is.numeric,sum) %>% 
+              dplyr::select(-Confidence) %>% 
+              column_to_rownames(var = "c") %>%
+              relabunda() %>% 
+              mutate(mean=rowMeans(.)) %>% 
+              arrange(desc(mean)) 
+```
+
+###EMBRYONIC TRACT
+-Otu table de tracto embrionario
+```{r, warning=FALSE, message=FALSE}
+otutable_TE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="Tracto.embrionario")
+```
+
+```{r, warning=FALSE, message=FALSE}
+TE_clase_10<- otutable_TE %>%
+              dplyr::select(-BarcodeSequence:-Type) %>%
+              column_to_rownames(var = "OTUID") %>%
+              t() %>% 
+              as.data.frame() %>%
+              rownames_to_column(var = "OTUID") %>% 
+              inner_join(taxonomia) %>% 
+              separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+              group_by(c) %>% 
+              summarise_if(is.numeric,sum) %>% 
+              dplyr::select(-Confidence) %>% 
+              column_to_rownames(var = "c") %>%
+              relabunda() %>% 
+              mutate(mean=rowMeans(.)) %>% 
+              arrange(desc(mean)) 
+```
+
+####Unir todo
+```{r, warning=FALSE, message=FALSE}
+clase_all<- boca_clase_10 %>% rownames_to_column(var = "id") %>%
+           full_join(cloaca_clase_10 %>% rownames_to_column(var="id")) %>%
+           full_join(intestine_clase_10 %>% rownames_to_column(var="id")) %>% 
+           full_join(dorso_clase_10 %>% rownames_to_column(var="id")) %>% 
+           full_join(LA_clase_10 %>% rownames_to_column(var="id")) %>%
+           full_join(ME_clase_10 %>% rownames_to_column(var="id")) %>% 
+           full_join(YE_clase_10 %>% rownames_to_column(var="id")) %>%
+           full_join(TE_clase_10 %>% rownames_to_column(var="id"))
+lista.clase<- unique(clase_all$id)
+clase_all_final<- otu.transferencia.2600.filtrada %>% 
+                  rownames_to_column(var = "OTUID") %>%
+                  inner_join(taxonomia) %>%
+                  separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>%
+                  group_by(c) %>% 
+                  summarise_if(is.numeric,sum) %>% 
+                  dplyr::select(-Confidence) %>%
+                  column_to_rownames(var = "c") %>%
+                  relabunda() %>% 
+                  rownames_to_column(var = "clase") %>%
+                  filter(clase %in% lista.clase)
+```
+
+####Preparar archivo
+```{r, warning=FALSE, message=FALSE}
+clase_plot<- clase_all_final %>% 
+             pivot_longer(cols=-clase, names_to = "OTUID", values_to="realbunda") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             mutate(clase=str_replace(clase,"c__", "")) %>%
+             mutate(Seccion2=factor(Seccion,levels=c("L.amniotico","Tracto.embrionario",
+                                                      "Membrana","Yema","Boca","Cloaca","Ileon","Dorso"),
+                                            labels=c("Amniotic fluid","Embryonic tract","Membrane","Yolk",
+                                                     "Mouth","Cloaca","Small \n intestine",
+                                                     "Aseptic ventral \n skin")))
+```
+
+####FIGURA CLASE
+-Definir vectores para aumentar la n de la paleta de colores 
+```{r}
+colors <- 30
+mycolors = colorRampPalette(brewer.pal(12, "Set3"))(colors) 
+#Modificar ciertos colores 
+mycolors[7]<- "#D3A5B4" 
+mycolors[10]<- "#f2a687"
+mycolors[8]<- "#bed1d2"
+```
+
+-Figura 
+```{r, eval=FALSE}
+cp <- clase_plot %>% ggplot(aes(x=`OTUID`, y=realbunda, fill=clase))+
+  geom_col()+facet_grid(.~Seccion2, scales="free", space = "free") +
+  labs(y="Relative abundance (%)") +
+  geom_bar(stat = "identity", position="stack", color="black", lwd=0.15) + 
+  guides(fill= guide_legend(title = "Class")) +
+  scale_fill_manual(values= mycolors) +
+  theme(## títulos de los ejes
+    ## texto en los ejes "x" y nùmeros en el eje "y":
+    #axis.text.y = element_text(color="black", size=9, family = "Helvetica"),
+    #axis.text.x = element_text(angle = 90, hjust = 0.5, colour = "black", size = 5, family ="Helvetica"),
+    ## font de los géneros: leyenda
+    legend.text = element_text(colour = "black", size = 8, family = "Helvetica"),
+    legend.key.size = unit(0.35, "cm"),
+    legend.key.width = unit(0.35,"cm"),
+    legend.box = "vertical",
+    legend.position = "right",
+    ## títulos de los ejes
+    axis.title.y = element_text (color="black", size=10, family = "Helvetica", hjust = 0.5,
+                                 face = "bold", margin =margin(t=0, r=10, b=0, l=0)),
+    #título del facet
+    strip.text.x = element_text(angle = 0,vjust = 0.5, hjust = 0.5, size = 6.3, family = "Helvetica"),
+    legend.title = element_text(color="black", size=10, family = "Helvetica"),
+    axis.text.x = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x =element_blank())+
+    theme(strip.background = element_blank(),
+    strip.text.x = element_blank())+
+    guides(fill=guide_legend(ncol=2, title = "Class"))
+
+cp
+```
+
+##FAMILY 
+###SMALL INTESTINE
+-Separar tablas y escoger las 10 familias más abundates de cada sección.
+-Otu table de intestino delgado 
+```{r, warning=FALSE, message=FALSE}
+otutable_intestine<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+                    rownames_to_column(var = "OTUID") %>% 
+                    inner_join(metadata.transferencia.2600.completo) %>%
+                    filter(Seccion=="Ileon")
+```
+
+```{r, warning=FALSE, message=FALSE}
+intestine_familia_10<- otutable_intestine %>% 
+                       dplyr::select(-BarcodeSequence:-Type) %>%
+                       column_to_rownames(var = "OTUID") %>% 
+                       t() %>% 
+                       as.data.frame() %>% 
+                       rownames_to_column(var = "OTUID") %>% 
+                       inner_join(taxonomia) %>% 
+                       separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                       group_by(f) %>% 
+                       summarise_if(is.numeric,sum) %>% 
+                       dplyr::select(-Confidence) %>% 
+                       mutate_at(c("f"), ~replace_na(.,"Selenomonadales")) %>%
+                       column_to_rownames(var = "f") %>%
+                       relabunda() %>% 
+                       mutate(mean=rowMeans(.)) %>% 
+                       arrange(desc(mean)) %>%
+                       slice(1:10) 
+
+```
+
+###MOUTH
+-Otu table de boca
+```{r, warning=FALSE, message=FALSE}
+otutable_boca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+               rownames_to_column(var = "OTUID") %>%
+               inner_join(metadata.transferencia.2600.completo) %>%
+               filter(Seccion=="Boca")
+```
+
+```{r, warning=FALSE, message=FALSE}
+boca_familia_10<- otutable_boca %>%
+                  dplyr::select(-BarcodeSequence:-Type) %>%
+                  column_to_rownames(var = "OTUID") %>%
+                  t() %>% 
+                  as.data.frame() %>%
+                  rownames_to_column(var = "OTUID") %>% 
+                  inner_join(taxonomia) %>% 
+                  separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                  group_by(f) %>% 
+                  summarise_if(is.numeric,sum) %>% 
+                  dplyr::select(-Confidence) %>% 
+                  mutate_at(c("f"), ~replace_na(.,"Selenomonadales")) %>%
+                  column_to_rownames(var = "f") %>%
+                  relabunda() %>% 
+                  mutate(mean=rowMeans(.)) %>% 
+                  arrange(desc(mean)) %>%
+                  slice(1:10) 
+```
+
+###CLOACA
+-Otu table de cloaca
+```{r, warning=FALSE, message=FALSE}
+otutable_cloaca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+                 rownames_to_column(var = "OTUID") %>%
+                 inner_join(metadata.transferencia.2600.completo) %>%
+                 filter(Seccion=="Cloaca")
+```
+
+```{r, warning=FALSE, message=FALSE}
+cloaca_familia_10<- otutable_cloaca %>%
+                    dplyr::select(-BarcodeSequence:-Type) %>%
+                    column_to_rownames(var = "OTUID") %>%
+                    t() %>% 
+                    as.data.frame() %>% 
+                    rownames_to_column(var = "OTUID") %>% 
+                    inner_join(taxonomia) %>% 
+                    separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                    group_by(f) %>% 
+                    summarise_if(is.numeric,sum) %>% 
+                    dplyr::select(-Confidence) %>% 
+                    mutate_at(c("f"), ~replace_na(.,"Selenomonadales")) %>%
+                    column_to_rownames(var = "f") %>%
+                    relabunda() %>% 
+                    mutate(mean=rowMeans(.)) %>% 
+                    arrange(desc(mean)) %>%
+                    slice(1:10) 
+```
+
+###VENTRAL BODY REGION
+-Otu table de región ventral del cuerpo
+```{r, warning=FALSE, message=FALSE}
+otutable_dorso<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+                rownames_to_column(var = "OTUID") %>%
+                inner_join(metadata.transferencia.2600.completo) %>%
+                filter(Seccion=="Dorso")
+```
+
+```{r, warning=FALSE, message=FALSE}
+dorso_familia_10<- otutable_dorso %>% 
+                   dplyr::select(-BarcodeSequence:-Type) %>%
+                   column_to_rownames(var = "OTUID") %>%
+                   t() %>% 
+                   as.data.frame() %>%
+                   rownames_to_column(var = "OTUID") %>% 
+                   inner_join(taxonomia) %>%
+                   separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                   group_by(f) %>% 
+                   summarise_if(is.numeric,sum) %>% 
+                   dplyr::select(-Confidence) %>% 
+                   mutate_at(c("f"), ~replace_na(.,"Selenomonadales")) %>%
+                   column_to_rownames(var = "f") %>%
+                   relabunda() %>% 
+                   mutate(mean=rowMeans(.)) %>% 
+                   arrange(desc(mean)) %>%
+                   slice(1:10) 
+```
+
+###AMNIOTIC FLUID
+-Otu table de líquido amniótico
+```{r, warning=FALSE, message=FALSE}
+otutable_LA<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="L.amniotico")
+```
+
+```{r, warning=FALSE, message=FALSE}
+LA_familia_10<- otutable_LA %>%
+                dplyr::select(-BarcodeSequence:-Type) %>%
+                column_to_rownames(var = "OTUID") %>%
+                t() %>% 
+                as.data.frame() %>% 
+                rownames_to_column(var = "OTUID") %>% 
+                inner_join(taxonomia) %>% 
+                separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                group_by(f) %>% 
+                summarise_if(is.numeric,sum) %>% 
+                dplyr::select(-Confidence) %>% 
+                mutate_at(c("f"), ~replace_na(.,"Selenomonadales")) %>%
+                column_to_rownames(var = "f") %>%
+                relabunda() %>% 
+                mutate(mean=rowMeans(.)) %>% 
+                arrange(desc(mean)) %>%
+                slice(1:10) 
+```
+
+###MEMBRANE
+-Otu table de membrana
+```{r, warning=FALSE, message=FALSE}
+otutable_ME<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F)%>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="Membrana")
+```
+
+```{r, warning=FALSE, message=FALSE}
+ME_familia_10<- otutable_ME %>%
+                dplyr::select(-BarcodeSequence:-Type) %>%
+                column_to_rownames(var = "OTUID") %>%
+                t() %>% 
+                as.data.frame() %>% 
+                rownames_to_column(var = "OTUID") %>% 
+                inner_join(taxonomia) %>% 
+                separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                group_by(f) %>% 
+                summarise_if(is.numeric,sum) %>% 
+                dplyr::select(-Confidence) %>% 
+                mutate_at(c("f"), ~replace_na(.,"Selenomonadales")) %>%
+                column_to_rownames(var = "f") %>%
+                relabunda() %>% 
+                mutate(mean=rowMeans(.)) %>% 
+                arrange(desc(mean)) %>%
+                slice(1:10) 
+```
+
+###YOLK
+-Otu table de yema
+```{r, warning=FALSE, message=FALSE}
+otutable_YE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F, check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="Yema")
+```
+
+```{r, warning=FALSE, message=FALSE}
+YE_familia_10<- otutable_YE %>% 
+                dplyr::select(-BarcodeSequence:-Type) %>%
+                column_to_rownames(var = "OTUID") %>%
+                t() %>% 
+                as.data.frame() %>% 
+                rownames_to_column(var = "OTUID") %>% 
+                inner_join(taxonomia) %>% 
+                separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                group_by(f) %>% 
+                summarise_if(is.numeric,sum) %>% 
+                dplyr::select(-Confidence) %>% 
+                mutate_at(c("f"), ~replace_na(.,"Selenomonadales")) %>%
+                column_to_rownames(var = "f") %>%
+                relabunda() %>% 
+                mutate(mean=rowMeans(.)) %>% 
+                arrange(desc(mean)) %>%
+                slice(1:10) 
+```
+
+###EMBRYONIC TRACT
+-Otu table de tracto embrionario
+```{r, warning=FALSE, message=FALSE}
+otutable_TE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
+             rownames_to_column(var = "OTUID") %>%
+             inner_join(metadata.transferencia.2600.completo) %>%
+             filter(Seccion=="Tracto.embrionario")
+```
+
+```{r, warning=FALSE, message=FALSE}
+TE_familia_10<- otutable_TE %>%
+                dplyr::select(-BarcodeSequence:-Type) %>%
+                column_to_rownames(var = "OTUID") %>%
+                t() %>% 
+                as.data.frame() %>% 
+                rownames_to_column(var = "OTUID") %>% 
+                inner_join(taxonomia) %>%
+                separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>% 
+                group_by(f) %>% 
+                summarise_if(is.numeric,sum) %>% 
+                dplyr::select(-Confidence) %>% 
+                mutate_at(c("f"), ~replace_na(.,"Selenomonadales")) %>%
+                column_to_rownames(var = "f") %>%
+                relabunda() %>% 
+                mutate(mean=rowMeans(.)) %>% 
+                arrange(desc(mean)) %>%
+                slice(1:10) 
+```
+
+####Unir todo
+```{r, warning=FALSE, message=FALSE}
+familia_all<- boca_familia_10 %>% rownames_to_column(var = "id") %>%
+              full_join(cloaca_familia_10 %>% rownames_to_column(var="id")) %>%
+              full_join(intestine_familia_10 %>% rownames_to_column(var="id")) %>%
+              full_join(dorso_familia_10 %>% rownames_to_column(var="id")) %>% 
+              full_join(LA_familia_10 %>% rownames_to_column(var="id")) %>% 
+              full_join(ME_familia_10 %>% rownames_to_column(var="id")) %>%
+              full_join(YE_familia_10 %>% rownames_to_column(var="id")) %>% 
+              full_join(TE_familia_10 %>% rownames_to_column(var="id"))
+lista.familia<- unique(familia_all$id)
+familia_all_final<- otu.transferencia.2600.filtrada %>% 
+                    rownames_to_column(var = "OTUID") %>%
+                    inner_join(taxonomia) %>%
+                    separate(taxonomy, c("k", "p", "c", "o", "f", "g", "s"),sep=";") %>%
+                    group_by(f) %>% 
+                    summarise_if(is.numeric,sum) %>%
+                    dplyr::select(-Confidence) %>%
+                    mutate_at(c("f"), ~replace_na(.,"Selenomonadales")) %>%
+                    column_to_rownames(var = "f") %>%
+                    relabunda() %>%
+                    rownames_to_column(var = "familia") %>%
+                    filter(familia %in% lista.familia)
+```
+
+####Preparar archivo
+```{r, warning=FALSE, message=FALSE}
+familia_plot<- familia_all_final %>%
+pivot_longer(cols=-familia, names_to = "OTUID", values_to="realbunda") %>%
+inner_join(metadata.transferencia.2600.completo) %>%
+mutate(familia=str_replace(familia,"f__", "")) %>%
+mutate(Seccion2=factor(Seccion,levels=c("L.amniotico","Tracto.embrionario","Membrana","Yema","Boca",
+                                        "Cloaca","Ileon","Dorso"),
+                    labels = c("Amniotic fluid","Embryonic tract","Membrane","Yolk","Mouth","Cloaca",
+                               "Small \n intestine","Aseptic ventral \n skin")))
+```
+
+####FIGURA FAMILIA
+-Definir vectores para aumentar la n de la paleta de colores 
+```{r}
+colors35 <- 35
+mycolors35 = colorRampPalette(brewer.pal(12, "Set3"))(colors35) 
+```
+
+-Figura
+```{r, eval=FALSE}
+fp <-familia_plot %>% ggplot(aes(x=`OTUID`, y=realbunda, fill=familia))+
+  geom_col()+facet_grid(.~Seccion2, scales="free", space = "free") +
+labs(y="Relative abundance (%)") +
+  geom_bar(stat = "identity", position="stack", color="black", lwd=0.15) + 
+  guides(fill= guide_legend(title = "Family", ncol = 1)) +
+  scale_fill_manual(values= mycolors35) +
+  theme(## títulos de los ejes
+    ## texto en los ejes "x" y nùmeros en el eje "y":
+    #axis.text.y = element_text(color="black", size=9, family = "Helvetica"),
+    #axis.text.x = element_text(angle = 90, hjust = 0.5, colour = "black", size = 5, family ="Helvetica"),
+    ## font de los géneros: leyenda
+    legend.text = element_text(colour = "black", size = 8, family = "Helvetica"),
+    legend.key.size = unit(0.35, "cm"),
+    legend.key.width = unit(0.35,"cm"),
+    legend.box = "vertical",
+    legend.position = "right",
+    ## títulos de los ejes
+    axis.title.y = element_text (color="black", size=10, family = "Helvetica", hjust = 0.5,
+                                 face= "bold", margin =margin(t=0, r=10, b=0, l=0)),
+    #título del facet
+    strip.text.x = element_text(angle = 0,vjust = 0.5, hjust = 0.5, size = 6.3, family = "Helvetica"),
+    legend.title = element_text(color="black", size=10, family = "Helvetica"),
+    axis.text.x = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x =element_blank())+
+    theme(legend.text = element_text(size = 7))+
+    theme(strip.background = element_blank(),
+    strip.text.x = element_blank())+
+    guides(fill=guide_legend(ncol=2, title = "Family"))
+
+fp
+```
+
+
+
+
+
+
+
+
+
+
+
+
