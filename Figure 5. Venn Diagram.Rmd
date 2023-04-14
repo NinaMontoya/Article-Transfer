@@ -3,13 +3,13 @@ title: "Figure 5. Venn Diagram"
 author: "Nina Montoya"
 date: "11/4/2023"
 output:
-  html_document:
-    df_print: paged
-  pdf_document: default
+  prettydoc::html_pretty:
+    theme: leonids
+    highlight: vignette
 ---
+##Diagrama de Venn 
 
-
-###Cargar librerias 
+####Cargar librerías 
 ```{r, warning=FALSE, message=FALSE}
 library(phyloseq)
 library(microbiomeutilities)
@@ -21,61 +21,62 @@ library(VennDiagram)
 library(dplyr)
 ```
 
-###Archivo de ids unassigned a filtrar de la otu table
+####Cargar data
+#####Archivo de ids unassigned a filtrar de la otu table
 ```{r}
-deleteIDS.unassigned <- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/listaASVs.p.filtrar.txt", check.names = F)
+deleteIDS.unassigned <- read.delim("data/listaASVs.p.filtrar.txt", check.names = FALSE)
 ```
 
-###Metadata
+#####Metadata
 ```{r}
-meta <- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/mapa.capII.transferencia.completo.txt", check.names = FALSE) 
+meta <- read.delim("data/mapa.capII.transferencia.completo.txt", check.names = FALSE) 
 ```
 
-###Otu table
+#####OTU table
 ```{r}
-table_bac <- read.csv("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/otutable.transferencia.completa.filterASVs.csv", row.names = 1, check.names = FALSE) %>%
-  rownames_to_column(var = "OTUID") %>%
-  filter(!OTUID %in% deleteIDS.unassigned$OTUID) %>% 
-  column_to_rownames(var = "OTUID") 
+table_bac <- read.csv("data/otutable.transferencia.completa.filterASVs.csv", row.names = 1, check.names = FALSE) %>%
+                      rownames_to_column(var = "OTUID") %>%
+                      filter(!OTUID %in% deleteIDS.unassigned$OTUID) %>% 
+                      column_to_rownames(var = "OTUID") 
 ```
 
-###Con base de datos sin singletons por muestra
+#####Con base de datos sin singletons por muestra
 ```{r}
 asv_table <- table_bac 
 asv_table[asv_table>0]=1 
 asv_no_single<-asv_table %>% 
-  filter(rowSums(across(where(is.numeric)))>1) %>%
-  t() %>%
-  as.data.frame() 
+               filter(rowSums(across(where(is.numeric)))>1) %>%
+               t() %>%
+               as.data.frame() 
 ```
 
-###Sacar incidencia por sección
+#####Sacar incidencia por sección
 ```{r}
 seccion_no_single<- asv_no_single %>%
-  rownames_to_column(var = "OTUID") %>%
-  inner_join(meta, by="OTUID") %>% 
-  dplyr::select('c203ab075235382ec1c23c22c02f255a':'9db2817f5c42be6a7bcbca662959982d', Seccion) %>% 
-  group_by(Seccion) %>%
-  summarise_if(is.numeric, sum) %>%
-  column_to_rownames(var = "Seccion") %>%
-  t() %>% 
-  as.data.frame()
+                    rownames_to_column(var = "OTUID") %>%
+                    inner_join(meta, by="OTUID") %>% 
+                    dplyr::select('c203ab075235382ec1c23c22c02f255a':'9db2817f5c42be6a7bcbca662959982d',Seccion) %>%
+                    group_by(Seccion) %>%
+                    summarise_if(is.numeric, sum) %>%
+                    column_to_rownames(var = "Seccion") %>%
+                    t() %>% 
+                    as.data.frame()
 ```
 
-###Función para generar los sets del diagrama de venn
+#####Función para generar los sets del diagrama de venn
 ```{r}
 get_set <- function(data, varName){
   varName <- enquo(varName)
   
   data %>%
-    rownames_to_column(., var = "ID") %>%
-    filter(!!varName > 0) %>%
-    select(ID) %>%
-    # Extrae una sola columna y la convierte en un vector
-    pull()}
+  rownames_to_column(., var = "ID") %>%
+  filter(!!varName > 0) %>%
+  select(ID) %>%
+  # Extrae una sola columna y la convierte en un vector
+  pull()}
 ```
 
-###MEMBRANE
+####MEMBRANE
 -Colores del diagrama de venn
 ```{r, eval=FALSE}
 dath_venn_region.ME <- c("#458B74","#5D478B", "#8B668B", "#CDB5CD", "#4A708B")
@@ -111,7 +112,7 @@ venn.diagram(x = list(get_set(seccion_no_single, Membrana),
                       cat.fontfamily = "sans",
                       disable.logging = TRUE)
 ```
-###AMNIOTIC FLUID
+####AMNIOTIC FLUID
 -Colores del diagrama de venn
 ```{r, eval=FALSE}
 dath_venn_region.LA <- c("#2F4F4F","#5D478B", "#8B668B", "#CDB5CD", "#4A708B")
@@ -147,7 +148,7 @@ venn.diagram(x = list(get_set(seccion_no_single, L.amniotico),
                       cat.fontfamily = "sans",
                       disable.logging = TRUE)
 ```
-###EMBRYONIC TRACT
+####EMBRYONIC TRACT
 -Colores del diagrama de venn
 ```{r, eval=FALSE}
 dath_venn_region.TE <- c("#698B69","#5D478B", "#8B668B", "#CDB5CD", "#4A708B")
@@ -183,7 +184,7 @@ venn.diagram(x = list(get_set(seccion_no_single, Tracto.embrionario),
                       cat.fontfamily = "sans",
                       disable.logging = TRUE)
 ```
-###YOLK
+####YOLK
 -Colores del diagrama de venn
 ```{r, eval=FALSE}
 dath_venn_region.YE <- c("#B4EEB4","#5D478B", "#8B668B", "#CDB5CD", "#4A708B")
@@ -221,19 +222,19 @@ venn.diagram(x = list(get_set(seccion_no_single, Yema),
   
 ```
 
-##Diagrama Global
-###MOTHER vs EMBRYO
-###Sacar incidencia por sexo
+###Diagrama Global
+####MOTHER vs EMBRYO
+#####Sacar incidencia por sexo
 ```{r, eval=FALSE}
 sexo_no_single<- asv_no_single %>%
-  rownames_to_column(var = "OTUID") %>%
-  inner_join(meta, by="OTUID")  %>% 
-  dplyr::select('c203ab075235382ec1c23c22c02f255a':'9db2817f5c42be6a7bcbca662959982d', Sexo) %>% 
-  group_by(Sexo) %>%
-  summarise_if(is.numeric, sum) %>%
-  column_to_rownames(var = "Sexo") %>%
-  t() %>%
-  as.data.frame()
+                 rownames_to_column(var = "OTUID") %>%
+                 inner_join(meta, by="OTUID")  %>% 
+                 dplyr::select('c203ab075235382ec1c23c22c02f255a':'9db2817f5c42be6a7bcbca662959982d', Sexo) %>% 
+                 group_by(Sexo) %>%
+                 summarise_if(is.numeric, sum) %>%
+                 column_to_rownames(var = "Sexo") %>%
+                 t() %>%
+                 as.data.frame()
 
 ```
 -Colores del diagrama de venn
@@ -269,33 +270,33 @@ dath_venn_region.global <- c("darkseagreen","thistle3")
 ```
 
 ###Identificar las asvs exlusivas del embrión (no compartidas con la madre), madre y compartidas.
-###Taxonomía
+####Taxonomía
 ```{r}
-taxonomia<- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/taxonomia.corridas123/taxonomy.tsv", check.names = F)
+taxonomia<- read.delim("data/taxonomy.tsv", check.names = F)
 ```
 
-###ASV´s exclusivas del embrión
+####ASV´s exclusivas del embrión
 ```{r, eval=FALSE, message=FALSE}
 sexo_no_single
 exclusive_embrion<- subset(sexo_no_single, Hembra=="0") %>%
-  rownames_to_column(var = "OTUID") %>%
-  left_join(taxonomia)
+                    rownames_to_column(var = "OTUID") %>%
+                    left_join(taxonomia)
 ```
 
-###ASV´s exclusivas de la madre
+####ASV´s exclusivas de la madre
 ```{r, eval=FALSE, message=FALSE}
 sexo_no_single
 exclusive_mother <- subset(sexo_no_single, Embrion=="0") %>% 
-  rownames_to_column(var = "OTUID") %>%
-  left_join(taxonomia)
+                    rownames_to_column(var = "OTUID") %>%
+                    left_join(taxonomia)
 ```
 
-###ASV´s compartidas 
+####ASV´s compartidas 
 ```{r, eval=FALSE, message=FALSE}
 sexo_no_single
 compartidas <- subset(sexo_no_single, Embrion>0 & Hembra>0) %>%
-  rownames_to_column(var = "OTUID") %>%
-  left_join(taxonomia)
+               rownames_to_column(var = "OTUID") %>%
+               left_join(taxonomia)
 ```
 
 
