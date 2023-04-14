@@ -1,0 +1,177 @@
+---
+title: "PCA suplementary"
+author: "Nina Montoya"
+date: "14/4/2023"
+output:
+  prettydoc::html_pretty:
+    theme: leonids
+    highlight: github
+---
+
+## PCA de 3 componentes sin región ventral del cuerpo
+
+####Cargar librerías 
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(vegan)
+library(dplyr)
+```
+
+####Cargar data
+#####Puntos
+```{r}
+puntos.PC3.menosDorso<- read.csv("data/puntos.PC3.!Dorso.csv", check.names= F)
+```
+
+#####Vectores
+```{r}
+vectores.PC3.menosDorso <- read.csv("data/vectores.PC3.!Dorso.csv", check.names= F)
+```
+
+#####Matriz de distancia 
+```{r, eval=FALSE}
+matriz.distancia.PC3.menosDorso <- read.delim("data/distance-matrix.PC3.!Dorso.tsv",
+                                              check.names = F, row.names = 1)
+```
+
+#####Taxonomía
+```{r}
+taxonomia<- read.delim("data/taxonomy.tsv", check.names = F)
+```
+
+#####ASV´s vectores
+```{r, warning=FALSE, message=FALSE}
+vectores.PC3.completo <- read.csv("data/vectores.PC3.completo.csv",
+                                  check.names= F) %>% rename(OTUID=Species)
+
+asvs_vector<- read.delim("data/asvs.vectores.txt", header = F) %>%
+                          separate(V1, c("OTUID", "taxa"))
+
+vars<- asvs_vector %>% 
+       inner_join(vectores.PC3.completo) %>%
+       inner_join(taxonomia) %>%
+       filter(!taxa=="Lachnoclostridium") %>%
+       filter(!taxa=="Lachnospiraceae") %>%
+       filter(!taxa=="Lachnoclostridium") %>%
+       filter(!taxa=="Enterobacteriaceae") %>%
+       filter(!OTUID=="71fd06bf8c25e42ed875df9c9ed704f7")
+```
+
+#####Metadata
+```{r warning=FALSE, message=FALSE}
+metadata.transf.2600.filter.sinDorso<-read.csv("data/metadata.transf.2600.filter.!Dorso.csv",
+                                               check.names = FALSE)
+
+#Cambiar el nombre de la columna 5 por "Hembra"
+colnames(metadata.transf.2600.filter.sinDorso)[5]<- "Hembra"
+```
+
+#####Declarar y cambiar condiciones para el plot 
+```{r, warning=FALSE, message=FALSE}
+metadata.transf.2600.filter.sinDorso <- metadata.transf.2600.filter.sinDorso %>% 
+mutate_at(c("seccion"), funs(Seccion= case_when( seccion=="L.amniotico"~"Amniotic fluid",
+                    seccion=="Tracto.embrionario"~"Embryonic tract",
+                    seccion=="Membrana"~"Membrane", 
+                    seccion=="Yema"~"Yolk", 
+                    seccion=="Boca"~"Mouth",
+                    seccion=="Cloaca"~"Cloaca",
+                    seccion=="Ileon"~"Small intestine",TRUE~as.character(seccion))))
+```
+
+#####Cambiar a factor, la variable Sección
+```{r, eval=FALSE}
+str(metadata.transf.2600.filter.sinDorso)
+metadata.transf.2600.filter.sinDorso$Seccion<-
+                                 factor(metadata.transf.2600.filter.sinDorso$Seccion)
+```
+
+#####Definir colores 
+```{r}
+colors.myorden.sinDorso <- c("#2F4F4F","#698B69","#458B74","#B4EEB4","#5D478B",
+                             "#8B668B","#CDB5CD")
+```
+
+#####Definir niveles
+```{r}
+PC1.C3.sinDorso <- paste("PC1", "61.16", "%")
+PC2.C3.sinDorso <- paste("PC2", "29.16", "%")
+```
+
+```{r}
+puntos.robusto.PC3.sinDorso<- data.frame(puntos.PC3.menosDorso) %>%
+                              inner_join(metadata.transf.2600.filter.sinDorso,
+                                          by = "OTUID")
+
+
+puntos.robusto.PC3.sinDorso$orden<-factor(puntos.robusto.PC3.sinDorso$Seccion,
+                                   levels=c("Amniotic fluid","Embryonic tract","Membrane",
+                                            "Yolk","Mouth","Cloaca","Small intestine"))
+```
+
+####Figura por sección 
+```{r, eval=FALSE, message=FALSE, warning=FALSE}
+PCA_robustoPC3.sinDorso <- ggplot()+
+  theme_bw() +
+  xlab(PC1.C3.sinDorso) +
+  ylab(PC2.C3.sinDorso) +
+  theme(axis.text = element_text(colour = "black", size = 12),
+        #axis.title.x.top = element_text(face = "bold", size = 30),
+        axis.title = element_text(colour = "black", size = 12, face = "bold"),
+        legend.text = element_text(size = 12),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        axis.ticks = element_line(colour = "black"),
+        axis.line = element_line(colour = "black"),
+        axis.text.y.right = element_text(colour = "black"),
+        axis.text.x.top = element_text(colour = "black"),
+        legend.position = "right", 
+        legend.box = "vertical",
+        legend.direction = "vertical",
+        legend.spacing.y = unit(0.01, 'cm'),
+        panel.border = element_rect(color = "black", size = 1.5),
+        legend.title = element_blank()) + 
+  geom_point(data = puntos.robusto.PC3.sinDorso,
+             aes(x=PC1, y=PC2, fill=orden), shape=21, size= 4.5) +
+  #geom_text(data = data.frame(pca.transferencia$x) %>% rownames_to_column(var = "ID") %>%
+  #left_join(metadata.transf.2600.filter, by = "ID"),
+  #aes(x=PC1, y=PC2, fill=Seccion,label= ID)) +
+  geom_vline(xintercept = 0, linetype = 3) + #lines-cross 
+  geom_hline(yintercept = 0, linetype = 3) +
+  scale_fill_manual(values = colors.myorden.sinDorso)+
+  #scale_x_continuous(limits = c(-0.3,0.3))+
+  #scale_y_continuous(limits = c(-0.3,0.3))+
+  theme(legend.text = element_text(size = 12))+
+  geom_segment(data = vars, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
+               arrow=arrow(length=unit(0.15,"cm")),
+               alpha = 0.75, color = 'black', size= 0.6)+
+  ggrepel::geom_text_repel(data = vars, aes(x=PC1, y=PC2, label= taxa),
+                            segment.colour = NA, 
+                            fontface="bold.italic",  box.padding = 0.6, size=4.5)
+```
+
+
+#####Observar PCA 
+```{r eval=FALSE}
+print(PCA_robustoPC3.sinDorso)
+```
+
+####perMANOVA por sección bloqueando a la madre y embrión
+```{r eval=FALSE, warning=FALSE, message=FALSE}
+library(vegan)
+permanova.Seccion.sinDorso.PC3 <-with(metadata.transf.2600.filter.sinDorso,
+                               adonis2(matriz.distancia.PC3.menosDorso ~ Seccion,
+                               data = metadata.transf.2600.filter.sinDorso,
+                               method = "euclidean", permutations = 999, strata = Embrion))
+
+
+print(permanova.Seccion.sinDorso.PC3)
+```
+
+####Guardar figura
+```{r, eval=FALSE}
+ggsave("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/PCA.!Dorso.tiff", 
+       device = "tiff", width=8.5, height=5, dpi=600)
+```
+
+
+
