@@ -4,11 +4,11 @@ author: "Nina Montoya"
 date: "12/4/2023"
 output:
   html_document:
-    theme: united
-    highlight: tango
+    theme: journal
+    highlight: pygments
 ---
 
-###Cargar librerias 
+####Cargar librerias 
 ```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
  library(dplyr)
@@ -19,24 +19,25 @@ library(tidyverse)
 ```
 
 
-###Importar data
+####Importar data
 -Otu table
 ```{r}
-otu.transferencia.2600.completa<-read.csv("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/otutable.transferencia.completa.filterASVs.csv", check.names = F, row.names = 1)
+otu.transferencia.2600.completa<-read.csv("data/otutable.transferencia.completa.filterASVs.csv",
+                                          check.names = F, row.names = 1)
 ```
 
-###Eliminar ASV's con 0 counts de la otu original
+####Eliminar ASV's con 0 counts de la otu original
 ```{r}
 otu.transferencia.2600.completa.sin0 <- otu.transferencia.2600.completa %>%
                                         filter(rowSums(across(where(is.numeric)))!=0) 
 ```
 
-###Archivo de ids unassigned a filtrar de la otu table
+####Archivo de ids unassigned a filtrar de la otu table
 ```{r}
-deleteIDS.unassigned <- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/listaASVs.p.filtrar.txt", check.names = F)
+deleteIDS.unassigned <- read.delim("data/listaASVs.p.filtrar.txt", check.names = F)
 ```
 
-###Filtrar de la otu table, los 87 ids anteriores
+####Filtrar de la otu table, los 87 ids anteriores
 ```{r}
 otu.transferencia.2600.filtrada <- otu.transferencia.2600.completa.sin0 %>% 
                                    rownames_to_column(var = "OTUID") %>% 
@@ -46,25 +47,25 @@ otu.transferencia.2600.filtrada<- otu.transferencia.2600.filtrada %>%
                                   column_to_rownames(var = "OTUID")
 ```
 
-###Metadata
+####Metadata
 ```{r}
-metadata.transferencia.2600.completo <- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/mapa.capII.transferencia.completo.txt", check.names = F) %>% 
+metadata.transferencia.2600.completo <- read.delim("data/mapa.capII.transferencia.completo.txt", check.names = F) %>% 
 mutate(Type=factor(Origen, levels = c("Embryo","Mother","Control of aseptic technique"),
                            labels = c("Embryo","Mother","Aseptic control")))
 ```
 
-###Taxonomía
+####Taxonomía
 ```{r}
-taxonomia<- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/taxonomia.corridas123/taxonomy.tsv", check.names = F)
+taxonomia<- read.delim("data/taxonomy.tsv", check.names = F)
 ```
 
-###Función para obtener abundancia relativa 
+####Función para obtener abundancia relativa 
 ```{r}
 relabunda<- function(x){(as.data.frame(t(t(x)/colSums(x)))*100)}
 ```
 
-##PHYLUM
-###SMALL INTESTINE
+###PHYLUM
+####SMALL INTESTINE
 -Separar tablas y escoger los 10 phyla más abundates de cada sección.
 -Otu table de intestino delgado.
 ```{r, warning=FALSE, message=FALSE}
@@ -93,7 +94,7 @@ intestine_phylum_10<- otutable_intestine %>%
 
 ```
 
-###MOUTH
+####MOUTH
 -Otu table de boca
 ```{r, warning=FALSE, message=FALSE}
 otutable_boca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -120,7 +121,7 @@ boca_phylum_10<- otutable_boca %>%
                  arrange(desc(mean)) 
 ```
 
-###CLOACA
+####CLOACA
 -Otu table de cloaca
 ```{r, warning=FALSE, message=FALSE}
 otutable_cloaca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -146,7 +147,7 @@ cloaca_phylum_10<- otutable_cloaca %>%
                    arrange(desc(mean)) 
 ```
 
-###VENTRAL BODY REGION 
+####VENTRAL BODY REGION 
 -Otu table de región ventral del cuerpo
 ```{r, warning=FALSE, message=FALSE}
 otutable_dorso<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -173,7 +174,7 @@ dorso_phylum_10<- otutable_dorso %>%
                   arrange(desc(mean)) 
 ```
 
-###AMNIOTIC FLUID
+####AMNIOTIC FLUID
 -Otu table de líquido amniótico
 ```{r, warning=FALSE, message=FALSE}
 otutable_LA<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -200,7 +201,7 @@ LA_phylum_10<- otutable_LA %>%
                arrange(desc(mean)) 
 ```
 
-###MEMBRANE
+####MEMBRANE
 -Otu table de membrana
 ```{r, warning=FALSE, message=FALSE}
 otutable_ME<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -227,7 +228,7 @@ ME_phylum_10<- otutable_ME %>%
                arrange(desc(mean)) 
 ```
 
-###YOLK
+####YOLK
 -Otu table de yema
 ```{r, warning=FALSE, message=FALSE}
 otutable_YE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -254,7 +255,7 @@ YE_phylum_10<- otutable_YE %>%
                arrange(desc(mean)) 
 ```
 
-###EMBRYONIC TRACT
+####EMBRYONIC TRACT
 -Otu table de tracto embrionario 
 ```{r, warning=FALSE, message=FALSE}
 otutable_TE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -366,8 +367,8 @@ ridiculous_strips <- strip_themed(background_x=elem_list_rect(fill=c("#2F4F4F","
   pp
 ```
 
-##CLASS 
-###SMALL INTESTINE
+###CLASS 
+####SMALL INTESTINE
 -Separar tablas y escoger las 10 clases más abundates de cada sección.
 -Otu table de intestino delgado 
 ```{r, warning=FALSE, message=FALSE}
@@ -395,7 +396,7 @@ intestine_clase_10<- otutable_intestine %>%
                      arrange(desc(mean)) 
 ```
 
-###MOUTH
+####MOUTH
 -Otu table de boca
 ```{r, warning=FALSE, message=FALSE}
 otutable_boca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -422,7 +423,7 @@ boca_clase_10<- otutable_boca %>%
                 arrange(desc(mean)) 
 ```
 
-###CLOACA
+####CLOACA
 -Otu table de cloaca
 ```{r, warning=FALSE, message=FALSE}
 otutable_cloaca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -449,7 +450,7 @@ cloaca_clase_10<- otutable_cloaca %>%
                   arrange(desc(mean)) 
 ```
 
-### VENTRAL BODY REGION
+####VENTRAL BODY REGION
 -Otu table de región ventral del cuerpo
 ```{r, warning=FALSE, message=FALSE}
 otutable_dorso<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -477,7 +478,7 @@ dorso_clase_10<- otutable_dorso %>%
                  arrange(desc(mean)) 
 ```
 
-###AMNIOTIC FLUID
+####AMNIOTIC FLUID
 -Otu table de líquido amniótico
 ```{r, warning=FALSE, message=FALSE}
 otutable_LA<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -504,7 +505,7 @@ LA_clase_10<- otutable_LA %>%
               arrange(desc(mean)) 
 ```
 
-###MEMBRANE
+####MEMBRANE
 -Otu table de membrana
 ```{r, warning=FALSE, message=FALSE}
 otutable_ME<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -531,7 +532,7 @@ ME_clase_10<- otutable_ME %>%
               arrange(desc(mean)) 
 ```
 
-###YOLK
+####YOLK
 -Otu table de yema
 ```{r, warning=FALSE, message=FALSE}
 otutable_YE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -558,7 +559,7 @@ YE_clase_10<- otutable_YE %>%
               arrange(desc(mean)) 
 ```
 
-###EMBRYONIC TRACT
+####EMBRYONIC TRACT
 -Otu table de tracto embrionario
 ```{r, warning=FALSE, message=FALSE}
 otutable_TE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -667,8 +668,8 @@ cp <- clase_plot %>% ggplot(aes(x=`OTUID`, y=realbunda, fill=clase))+
 cp
 ```
 
-##FAMILY 
-###SMALL INTESTINE
+###FAMILY 
+####SMALL INTESTINE
 -Separar tablas y escoger las 10 familias más abundates de cada sección.
 -Otu table de intestino delgado 
 ```{r, warning=FALSE, message=FALSE}
@@ -699,7 +700,7 @@ intestine_familia_10<- otutable_intestine %>%
 
 ```
 
-###MOUTH
+####MOUTH
 -Otu table de boca
 ```{r, warning=FALSE, message=FALSE}
 otutable_boca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -728,7 +729,7 @@ boca_familia_10<- otutable_boca %>%
                   slice(1:10) 
 ```
 
-###CLOACA
+####CLOACA
 -Otu table de cloaca
 ```{r, warning=FALSE, message=FALSE}
 otutable_cloaca<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -757,7 +758,7 @@ cloaca_familia_10<- otutable_cloaca %>%
                     slice(1:10) 
 ```
 
-###VENTRAL BODY REGION
+####VENTRAL BODY REGION
 -Otu table de región ventral del cuerpo
 ```{r, warning=FALSE, message=FALSE}
 otutable_dorso<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -786,7 +787,7 @@ dorso_familia_10<- otutable_dorso %>%
                    slice(1:10) 
 ```
 
-###AMNIOTIC FLUID
+####AMNIOTIC FLUID
 -Otu table de líquido amniótico
 ```{r, warning=FALSE, message=FALSE}
 otutable_LA<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
@@ -815,7 +816,7 @@ LA_familia_10<- otutable_LA %>%
                 slice(1:10) 
 ```
 
-###MEMBRANE
+####MEMBRANE
 -Otu table de membrana
 ```{r, warning=FALSE, message=FALSE}
 otutable_ME<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F)%>%
@@ -844,7 +845,7 @@ ME_familia_10<- otutable_ME %>%
                 slice(1:10) 
 ```
 
-###YOLK
+####YOLK
 -Otu table de yema
 ```{r, warning=FALSE, message=FALSE}
 otutable_YE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F, check.rows=F) %>%
@@ -873,7 +874,7 @@ YE_familia_10<- otutable_YE %>%
                 slice(1:10) 
 ```
 
-###EMBRYONIC TRACT
+####EMBRYONIC TRACT
 -Otu table de tracto embrionario
 ```{r, warning=FALSE, message=FALSE}
 otutable_TE<-data.frame(t(otu.transferencia.2600.filtrada),check.names=F,check.rows=F) %>%
