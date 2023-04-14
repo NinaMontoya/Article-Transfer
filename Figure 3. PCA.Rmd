@@ -2,51 +2,56 @@
 title: "Figure 3. PCA"
 author: "Nina Montoya"
 date: "13/4/2023"
-output: html_document
+output:
+  prettydoc::html_pretty:
+    theme: leonids
+    highlight: vignette
 ---
 
 ##PCA COMPLETO DE 3 COMPONENTES
-###Cargar librerías
+
+####Cargar librerías
 ```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
 ```
 
-####Puntos
+####Cargar data
+#####Puntos
 ```{r}
-puntos.PC3.completo<- read.csv("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/PCA robusto/puntos.PC3.completo.csv", check.names= F)
+puntos.PC3.completo<- read.csv("data/puntos.PC3.completo.csv", check.names= F)
 ```
 
-####Vectores
+#####Vectores
 ```{r}
-vectores.PC3.completo <- read.csv("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/PCA robusto/vectores.PC3.completo.csv", check.names= F) %>% rename(OTUID=Species)
+vectores.PC3.completo <- read.csv("data/vectores.PC3.completo.csv", check.names= F) %>% rename(OTUID=Species)
 ```
 
-####Matriz de distancia
+#####Matriz de distancia
 ```{r, eval=FALSE}
-matriz.distancia.PC3.completo <- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/PCArobusto/distance-matrix.PC3.completo.tsv", check.names = F, row.names = 1)
+matriz.distancia.PC3.completo <- read.delim("data/distance-matrix.PC3.completo.tsv", check.names = F, row.names = 1)
 ```
 
-####Taxonomía
+#####Taxonomía
 ```{r}
-taxonomia<- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/taxonomia.corridas123/taxonomy.tsv", check.names = F)
+taxonomia<- read.delim("data/taxonomy.tsv", check.names = F)
 ```
 
-####ASV´s vectores
+#####ASV´s vectores
 ```{r, warning=FALSE, message=FALSE}
-asvs_vector<- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/asvs.vectores.txt", header = F) %>% separate(V1, c("OTUID", "taxa"))
+asvs_vector<- read.delim("data/asvs.vectores.txt", header = F) %>% separate(V1, c("OTUID", "taxa"))
 
 vars<- asvs_vector %>% inner_join(vectores.PC3.completo) %>% inner_join(taxonomia)
 ```
 
-####Metadata
+#####Metadata
 ```{r, warning=FALSE, message=FALSE}
-metadata.transferencia.completo<-read.csv("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/metadata.transf.2600.matriz.csv", check.names = FALSE)
+metadata.transferencia.completo<-read.csv("data/metadata.transf.2600.matriz.csv", check.names = FALSE)
 
 #Cambiar el nombre de la columna 15 por "Hembra"
 colnames(metadata.transferencia.completo)[15]<- "Hembra"
 ```
 
-####Declarar y cambiar condiciones para el plot 
+#####Declarar y cambiar condiciones para el plot 
 ```{r, warning=FALSE, message=FALSE}
 metadata.transferencia.completo <- metadata.transferencia.completo %>%
 mutate_at(c("Seccion"),funs(Seccion2=case_when(Seccion=="Boca"~"Mouth",
@@ -60,19 +65,19 @@ mutate_at(c("Seccion"),funs(Seccion2=case_when(Seccion=="Boca"~"Mouth",
 
 ```
 
-####Cambiar a factor, la variable Sección
+#####Cambiar a factor, la variable Sección
 ```{r,eval=FALSE}
 str(metadata.transferencia.completo)
 metadata.transferencia.completo$Seccion2<-factor(metadata.transferencia.completo$Seccion2)
 ```
 
-####Definir colores 
+#####Definir colores 
 ```{r}
 colors.myorden <- c("#2F4F4F","#698B69","#458B74","#B4EEB4","#5D478B","#8B668B",
                     "#CDB5CD","#4A708B")
 ```
 
-####Definir niveles
+#####Definir niveles
 ```{r}
 PC1.C3.completo <- paste("PC1", "55.86", "%")
 PC2.C3.completo <- paste("PC2", "32.68", "%")
@@ -82,9 +87,10 @@ PC2.C3.completo <- paste("PC2", "32.68", "%")
 puntos.robusto.PC3<- data.frame(puntos.PC3.completo) %>% 
                      inner_join(metadata.transferencia.completo, by = "OTUID")
 
-puntos.robusto.PC3$orden<-factor(puntos.robusto.PC3$Seccion2,levels=c("Amnioticfluid",
-                                                "Embryonic tract","Membrane","Yolk","Mouth","Cloaca",
-                                                "Small intestine","Aseptic ventral skin"))
+puntos.robusto.PC3$orden<-factor(puntos.robusto.PC3$Seccion2,levels=c("Amniotic fluid",
+                                                                      "Embryonic tract","Membrane","Yolk",
+                                                                      "Mouth","Cloaca","Small intestine",
+                                                                      "Aseptic ventral skin"))
 ```
 
 ####Figura por sección 
@@ -129,17 +135,17 @@ PCA_robustoPC3.completo <- ggplot()+
 
 ```
 
-####Observar PCA 
+#####Observar PCA 
 ```{r, eval=FALSE}
 print(PCA_robustoPC3.completo)
 ```
 
-## perMANOVA por sección bloqueando a la madre y embrión
+####perMANOVA por sección bloqueando a la madre y embrión
 ```{r, eval=FALSE, warning=FALSE, message=FALSE}
 library(vegan)
 permanova.Seccion.PC3.completo<-with(metadata.transferencia.completo,
-              adonis2(matriz.distancia.PC3.completo ~ Seccion, data = metadata.transferencia.completo,
-              method = "euclidean", permutations = 999, strata = embrion))
+                            adonis2(matriz.distancia.PC3.completo ~ Seccion, data = metadata.transferencia.completo,
+                            method = "euclidean", permutations = 999, strata = embrion))
 
 
 print(permanova.Seccion.PC3.completo)
