@@ -264,10 +264,10 @@ otu.transferencia.<span class="fl">2600.</span>filtrada&lt;-<span class="st"> </
 </div>
 <div id="metadata" class="section level4">
 <h4>Metadata</h4>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">metadata.transferencia.<span class="fl">2600.</span>completo &lt;-<span class="st"> </span><span class="kw">read.delim</span>(<span class="st">&quot;data/mapa.capII.transferencia.completo.txt&quot;</span>,
-                                                    <span class="dt">check.names =</span> F) <span class="op">%&gt;%</span><span class="st"> </span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">metadata.transferencia.<span class="fl">2600.</span>completo&lt;-<span class="kw">read.delim</span>(<span class="st">&quot;data/mapa.capII.transferencia.completo.txt&quot;</span>,
+                                                 <span class="dt">check.names =</span> F) <span class="op">%&gt;%</span><span class="st"> </span>
 <span class="kw">mutate</span>(<span class="dt">Type=</span><span class="kw">factor</span>(Origen, <span class="dt">levels =</span> <span class="kw">c</span>(<span class="st">&quot;Embryo&quot;</span>,<span class="st">&quot;Mother&quot;</span>,<span class="st">&quot;Control of aseptic technique&quot;</span>),
-                             <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;Embryo&quot;</span>,<span class="st">&quot;Mother&quot;</span>,<span class="st">&quot;Aseptic control&quot;</span>)))</code></pre></div>
+                           <span class="dt">labels =</span> <span class="kw">c</span>(<span class="st">&quot;Embryo&quot;</span>,<span class="st">&quot;Mother&quot;</span>,<span class="st">&quot;Aseptic control&quot;</span>)))</code></pre></div>
 </div>
 <div id="taxonomía" class="section level4">
 <h4>Taxonomía</h4>

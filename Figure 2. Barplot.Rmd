@@ -50,10 +50,10 @@ otu.transferencia.2600.filtrada<- otu.transferencia.2600.filtrada %>%
 
 ####Metadata
 ```{r}
-metadata.transferencia.2600.completo <- read.delim("data/mapa.capII.transferencia.completo.txt",
-                                                    check.names = F) %>% 
+metadata.transferencia.2600.completo<-read.delim("data/mapa.capII.transferencia.completo.txt",
+                                                 check.names = F) %>% 
 mutate(Type=factor(Origen, levels = c("Embryo","Mother","Control of aseptic technique"),
-                             labels = c("Embryo","Mother","Aseptic control")))
+                           labels = c("Embryo","Mother","Aseptic control")))
 ```
 
 ####Taxonomía
