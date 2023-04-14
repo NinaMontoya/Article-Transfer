@@ -3,11 +3,12 @@ title: "Figure 2. Barplot"
 author: "Nina Montoya"
 date: "12/4/2023"
 output:
-  html_document:
-    theme: journal
-    highlight: pygments
+  prettydoc::html_pretty:
+    theme: leonids
+    highlight: vignette
 ---
 
+## Barplot de la composición taxónomica
 
 ####Cargar librerias 
 ```{r, warning=FALSE, message=FALSE}
@@ -23,8 +24,8 @@ library(tidyverse)
 ####Importar data
 -Otu table
 ```{r}
-otu.transferencia.2600.completa<-read.csv("data/otutable.transferencia.completa.filterASVs.csv",
-                                          check.names = F, row.names = 1)
+otu.transferencia.2600.completa<-read.csv("data/otutable.transferencia.completa.filterASVs.csv", check.names = F,
+                                          row.names = 1)
 ```
 
 ####Eliminar ASV's con 0 counts de la otu original
@@ -50,8 +51,7 @@ otu.transferencia.2600.filtrada<- otu.transferencia.2600.filtrada %>%
 
 ####Metadata
 ```{r}
-metadata.transferencia.2600.completo<-read.delim("data/mapa.capII.transferencia.completo.txt",
-                                                 check.names = F) %>% 
+metadata.transferencia.2600.completo<-read.delim("data/mapa.capII.transferencia.completo.txt", check.names = F) %>% 
 mutate(Type=factor(Origen, levels = c("Embryo","Mother","Control of aseptic technique"),
                            labels = c("Embryo","Mother","Aseptic control")))
 ```
@@ -615,14 +615,13 @@ clase_all_final<- otu.transferencia.2600.filtrada %>%
 ####Preparar archivo
 ```{r, warning=FALSE, message=FALSE}
 clase_plot<- clase_all_final %>% 
-             pivot_longer(cols=-clase, names_to = "OTUID", values_to="realbunda") %>%
-             inner_join(metadata.transferencia.2600.completo) %>%
-             mutate(clase=str_replace(clase,"c__", "")) %>%
-             mutate(Seccion2=factor(Seccion,levels=c("L.amniotico","Tracto.embrionario",
-                                                      "Membrana","Yema","Boca","Cloaca","Ileon","Dorso"),
-                                            labels=c("Amniotic fluid","Embryonic tract","Membrane","Yolk",
-                                                     "Mouth","Cloaca","Small \n intestine",
-                                                     "Aseptic ventral \n skin")))
+pivot_longer(cols=-clase, names_to = "OTUID", values_to="realbunda") %>%
+inner_join(metadata.transferencia.2600.completo) %>%
+mutate(clase=str_replace(clase,"c__", "")) %>%
+mutate(Seccion2=factor(Seccion,levels=c("L.amniotico","Tracto.embrionario",
+                                        "Membrana","Yema","Boca","Cloaca","Ileon","Dorso"),
+                               labels=c("Amniotic fluid","Embryonic tract","Membrane","Yolk",
+                                        "Mouth","Cloaca","Small \n intestine","Aseptic ventral \n skin")))
 ```
 
 ####FIGURA CLASE
@@ -938,8 +937,8 @@ inner_join(metadata.transferencia.2600.completo) %>%
 mutate(familia=str_replace(familia,"f__", "")) %>%
 mutate(Seccion2=factor(Seccion,levels=c("L.amniotico","Tracto.embrionario","Membrana","Yema","Boca",
                                         "Cloaca","Ileon","Dorso"),
-                    labels = c("Amniotic fluid","Embryonic tract","Membrane","Yolk","Mouth","Cloaca",
-                               "Small \n intestine","Aseptic ventral \n skin")))
+                               labels=c("Amniotic fluid","Embryonic tract","Membrane","Yolk",
+                                        "Mouth","Cloaca","Small \n intestine","Aseptic ventral \n skin")))
 ```
 
 ####FIGURA FAMILIA
