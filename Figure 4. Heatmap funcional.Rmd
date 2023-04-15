@@ -1,0 +1,334 @@
+---
+title: "Figure 4. Heatmap funcional"
+author: "Nina Montoya"
+date: "14/4/2023"
+output:
+  prettydoc::html_pretty:
+    theme: leonids
+    highlight: vignette
+---
+
+## Heatmap de las funciones bacterianas
+
+####Cargar librerías
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(pheatmap)
+library(ALDEx2)
+library(ComplexHeatmap)
+library(grid)
+library(dplyr)
+library(RColorBrewer)
+library(colorRamps)
+library(circlize)
+```
+
+####Cargar datos
+
+#####Archivo de funciones a filtrar de la otu table
+```{r}
+funciones.importantes <- read.delim("data/funciones.importantes.txt", check.names = F)
+```
+
+#####OTU table
+```{r, warning=FALSE, message=FALSE}
+tabla.picrust <- read_csv("data/tabla.niveles.description.csv") %>%
+                 dplyr::filter(description %in% 
+                 funciones.importantes$description) %>%
+                 column_to_rownames(var = "description")
+```
+
+
+#####Convertir a números enteros la otu funcional (proveniente de picrust)
+```{r}
+tabla.picrust.entero <- round(tabla.picrust, 0)
+```
+
+
+#####Transformar a porcentaje
+```{r}
+phy.ra.completa.picrust <- t(t(tabla.picrust.entero)/colSums(tabla.picrust.entero)*100) %>% as.data.frame()
+```
+
+#####Metadata
+```{r}
+metadata.picrust <- read.csv("data/metadata.transf.2600.matriz.csv", check.names = FALSE) %>%
+mutate(Seccion=factor(Seccion, levels = c("L.amniotico","Tracto.embrionario","Membrana","Yema",
+                                          "Boca","Cloaca","Ileon","Dorso"),
+                               labels = c("Amniotic fluid","Embryonic tract","Membrane","Yolk",
+                                          "Mouth","Cloaca","Small intestine","Aseptic ventral skin"))) %>%
+mutate(Origen=factor(Origen, levels = c("Embryo","Mother","Control of aseptic technique"),
+                             labels = c("Embryo","Mother","Aseptic control")))
+```
+
+#####Cargar levels 
+```{r, warning=FALSE, message=FALSE}
+levels2.picrust <- readr::read_tsv("data/pathways2_abun_by_levels.csv")
+```
+
+#####Tabla modificada 
+```{r, warning=FALSE, message=FALSE}
+tabla_abundantes.picrust <- phy.ra.completa.picrust %>% 
+mutate(abun= rowMeans(.)) %>% 
+rownames_to_column(var="description") %>%
+arrange(-abun) %>% 
+left_join(levels2.picrust, by = c("description")) %>%
+left_join(funciones.importantes) %>% 
+mutate(score=importance*100) %>% 
+mutate_at(c("description"), funs(OTUID=case_when(
+  description=="L-tryptophan degradation to 2-amino-3-carboxymuconate semialdehyde" ~ "L-tryptophan degradation",
+  description=="superpathway of heme biosynthesis from glycine" ~ "SP heme biosynthesis", 
+  description=="pyruvate fermentation to acetate and lactate II" ~ "Pyruvate fermentation II", 
+  description=="ADP-L-glycero-&beta;-D-manno-heptose biosynthesis" ~ "ADP-L-beta-D-heptose biosynthesis",
+  description=="reductive TCA cycle I" ~ "Reductive TCA cycle I",
+  description=="photorespiration" ~ "Photorespiration",
+  description=="myo-, chiro- and scillo-inositol degradation" ~ "Inositol degradation",
+  description=="pyrimidine deoxyribonucleotides de novo biosynthesis III" ~ "Pyrimidine dnTPs biosynthesis III",
+  description=="vanillin and vanillate degradation II" ~ "Vanillin and vanillate degradation II",
+  description=="pyruvate fermentation to acetone" ~ "Pyruvate fermentation",
+  description=="vanillin and vanillate degradation I" ~ "Vanillin and vanillate degradation I",
+  description=="fucose degradation" ~ "Fucose degradation", 
+  description=="superpathway of fucose and rhamnose degradation" ~ "SP fucose and rhamnose degradation", 
+  description=="gallate degradation I" ~ "Gallate degradation I", 
+  description=="myo-inositol degradation I" ~ "Inositol degradation I",
+  description=="superpathway of chorismate metabolism" ~ "SP chorismate metabolism",
+  description=="heterolactic fermentation" ~ "Heterolactic fermentation",
+  description=="superpathway of menaquinol-9 biosynthesis" ~ "SP menaquinol-9 biosynthesis",
+  description=="superpathway of menaquinol-6 biosynthesis I" ~ "SP menaquinol-6 biosynthesis I",
+  description=="superpathway of menaquinol-10 biosynthesis" ~ "SP menaquinol-10 biosynthesis",
+  description=="thiazole biosynthesis II (Bacillus)" ~ "Thiazole biosynthesis II",
+  description=="superpathway of phenylethylamine degradation" ~ "SP phenylethylamine degradation", 
+  description=="superpathway of demethylmenaquinol-6 biosynthesis I" ~ "SP demethylmenaquinol-6 biosynthesis I", 
+  description=="superpathway of demethylmenaquinol-9 biosynthesis" ~ "SP demethylmenaquinol-9 biosynthesis", 
+  description=="superpathway of demethylmenaquinol-6 biosynthesis II" ~ "SP demethylmenaquinol-6 biosynthesis II",
+  description=="enterobacterial common antigen biosynthesis" ~ "Enterobacterial common antigen biosynthesis",
+  description=="toluene degradation IV (aerobic) (via catechol)" ~ "Toluene degradation IV (aerobic)",
+  description=="benzoyl-CoA degradation I (aerobic)" ~ "Benzoyl-CoA degradation I (aerobic)",
+  description=="nitrate reduction VI (assimilatory)" ~ "Nitrate reduction VI (assimilatory)",
+  description=="catechol degradation to 2-oxopent-4-enoate II" ~ "Catechol degradation",
+  description=="catechol degradation II (meta-cleavage pathway)" ~ "Catechol degradation II",
+  description=="superpathway of aerobic toluene degradation" ~ "SP aerobic toluene degradation", 
+  description=="succinate fermentation to butanoate" ~ "Succinate fermentation", 
+  description=="mandelate degradation to acetyl-CoA" ~ "Mandelate degradation", 
+  description=="mandelate degradation I" ~ "Mandelate degradation I",
+  description=="nitrate reduction I (denitrification)" ~ "Nitrate reduction I (denitrification)",
+  description=="chlorosalicylate degradation" ~ "Chlorosalicylate degradation",
+  description=="2-amino-3-carboxymuconate semialdehyde degradation to 2-oxopentenoate" ~ "Semialdehyde degradation",
+  description=="ethylmalonyl-CoA pathway" ~ "Ethylmalonyl-CoA pathway",TRUE~as.character(description))))
+
+
+taxa_names.picrust <- tabla_abundantes.picrust$OTUID
+#View(taxa_names.picrust)
+```
+
+#####Ordenar la tabla por origen y sección uniendo con el metadata
+```{r, warning=FALSE, message=FALSE}
+heat.picrust<- tabla_abundantes.picrust  %>% 
+               column_to_rownames(var = "OTUID") %>%
+               select_if(is.numeric) %>% 
+               dplyr::select(-abun) %>%
+               t() %>% 
+               as.data.frame() %>% rownames_to_column(var = "OTUID") %>% 
+               inner_join(metadata.picrust, joining, by="OTUID")
+
+#Unir con el metadata
+heat.picrust<- metadata.picrust %>% 
+               inner_join(heat.picrust) %>%
+               arrange(factor(Origen, levels = c("Embryo","Mother","Aseptic control")),
+                       factor(Seccion, levels = c("Amniotic fluid","Embryonic tract","Membrane","Yolk",
+                                                  "Mouth","Cloaca","Small intestine","Aseptic ventral skin")))
+```
+
+
+#####Transformación de rangos
+```{r, warning=FALSE, message=FALSE}
+heatmap.picrust<- heat.picrust %>% 
+                  column_to_rownames(var = "OTUID") %>% 
+                  dplyr::select(`L-leucine degradation I`:`Ethylmalonyl-CoA pathway`) %>%
+                  t() %>% 
+                  as.data.frame() %>%
+                  mutate_all(., funs(R = case_when(
+                  . <= 0.001 ~ 0,
+                  . >  0.001 & .  <= 0.005 ~ 1,
+                  . >  0.005 & .  <= 0.01 ~ 2,
+                  . >  0.01 & .  <= 0.10 ~ 3,
+                  . >  0.10 & .  <= 0.20 ~ 4,
+                  . >  0.20 & .  <= 1.00 ~ 5,
+                  . >  1.00 & .  <= 2.00 ~ 6,
+                  . >  2.00 & .  <= 5.00 ~ 7,
+                  . >  5.00 & .  <= 10.00 ~ 8,
+                  . >  10.00 & .  <= 25.00 ~ 9,
+                  . >  25.00 & .  <= 50.00 ~ 10,
+                  . >  50.00 & .  <= 75.00 ~ 11,
+                  . >  75.00 ~ 12))) %>%
+                  select_at(vars(contains("_R"))) %>%
+                  select_all(~str_replace(., "_R", ""))
+```
+
+####COMPLEXHEATMAP
+#####Paleta de colores del heatmap
+```{r}
+my_palette <- viridis::viridis(n = 12, option = "B", direction = -1)
+```
+
+
+#####Anotación de filas
+```{r}
+annotation_rows <- tabla_abundantes.picrust %>% 
+dplyr::select(OTUID, level2, score) %>% 
+column_to_rownames(var = "OTUID")
+
+rownames(annotation_rows) <- rownames(heatmap.picrust)
+```
+
+#####Anotación de columnas (sección y origen)
+```{r}
+annotation_columns<- heat.picrust %>% dplyr::select(Origen, Seccion) 
+
+rownames(annotation_columns) <- colnames(heatmap.picrust)
+
+newnames.picrust <- lapply(taxa_names.picrust,function(x) bquote(italic(.(x))))
+```
+
+#####Paletas de colores para anotaciones
+```{r}
+colors.level <- 15
+mycolors.level = colorRampPalette(brewer.pal(8, "Accent"))(colors.level) 
+c8<- c("#2F4F4F","#698B69","#458B74","#B4EEB4","#5D478B","#8B668B","#CDB5CD","#4A708B")
+c2<- c("darkseagreen","thistle3", "cadetblue")
+```
+
+-Colores de sección
+```{r}
+cols_seccion <- list('Section' = c("Amniotic fluid" = "#2F4F4F", 
+                                   "Embryonic tract"= "#698B69",
+                                   "Membrane"= "#458B74", 
+                                   "Yolk" = "#B4EEB4",
+                                   "Mouth"= "#5D478B",
+                                   "Cloaca" = "#8B668B",
+                                   "Small intestine" = "#CDB5CD",
+                                   "Aseptic ventral skin" = "#4A708B"))
+```
+
+-Colores de origen
+```{r}
+cols_origen<- list("Origin"= c("Embryo" = "darkseagreen","Mother" ="thistle3", "Aseptic control" = "cadetblue"))
+```
+
+-Colores de nivel
+```{r}
+col_level<- mycolors.level
+names(col_level)<- sort(unique(annotation_rows$level2))
+cols_level<-list("Level 2"= col_level)
+```
+
+#####Anotaciones
+-Sección
+```{r}
+annseccion = HeatmapAnnotation("Section" = annotation_columns$Seccion, 
+                               which = "column", 
+                               show_legend = F, 
+                               annotation_name_gp =gpar(fontsize = 10, fontface="bold"),
+                               gp = gpar(col = "white"), 
+                               show_annotation_name = T,
+                               col = cols_seccion)
+```
+
+-Origen
+```{r}
+annorigen = HeatmapAnnotation("Origin" = annotation_columns$Origen, 
+                              which = "column", 
+                              annotation_name_gp =gpar(fontsize = 10, fontface="bold"),
+                              show_legend = F, 
+                              gp = gpar(col = "white"), 
+                              show_annotation_name = T,
+                              col = cols_origen)
+```
+
+-Nivel
+```{r}
+annlevel2 = HeatmapAnnotation("Level 2" = annotation_rows$level2, 
+                            which = "row", 
+                            show_legend = F,   
+                            show_annotation_name = T,
+                            annotation_name_gp =gpar(fontsize = 10, fontface="bold"),
+                            annotation_legend_param = list(title_gp = gpar(fontsize = 8, fontface="bold"),
+                            labels_gp = gpar(fontsize = 8),
+                            direction ="vertical"),
+                            gp = gpar(col = "white"),
+                            col = cols_level)
+```
+
+-Score
+```{r}
+annscore = HeatmapAnnotation("Score (%)" = annotation_rows$score,
+                             which = "row",
+                             show_legend = T,
+                             show_annotation_name = T,
+                             annotation_name_gp =gpar(fontsize = 10, fontface="bold"),
+                             annotation_legend_param = list(title_gp = gpar(fontsize = 9, fontface="bold"),
+                             labels_gp = gpar(fontsize = 7),
+                             direction ="horizontal"),
+                             gp = gpar(col = "white"),
+                             col = list("Score (%)" = colorRamp2(breaks = c(0, 0.5, 0.6, 0.8, 1, 2),
+                                         colors = c("#fde725","#7ad151","#22a884","#2a788e","#414487","#440154"))))
+```
+
+#####Leyendas
+```{r}
+lgd1.picrust=Legend(at=sort(unique(annotation_rows$level2)),legend_gp=gpar(fill=mycolors.level),title="Level 2",
+                    labels_gp=gpar(fontsize=10))
+
+lgd2.picrust=Legend(at=sort(unique(annotation_columns$Origen)),legend_gp=gpar(fill=c2),title="Origin",
+                    labels_gp=gpar(fontsize=10))
+
+lgd3.picrust=Legend(at=sort(unique(annotation_columns$Seccion)),legend_gp=gpar(fill=c8),title="Section",
+                    labels_gp=gpar(fontsize=10))
+
+#Unir leyendas
+pd.picrust = packLegend(list = list(lgd1.picrust, lgd2.picrust, lgd3.picrust))
+```
+
+
+####FIGURA
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
+heats.picrust<-Heatmap(heatmap.picrust, col=my_palette,
+               heatmap_legend_param = list(direction = "horizontal",
+                                           labels_gp = gpar(fontsize = 7),
+                                           title_gp = gpar(fontsize = 9, fontface="bold"),
+                                           title = "Relative abundance (%)",
+                                           title_position = "topcenter",
+                                           at = c(0,1,2,3,5,8,10,25, 50, 100),
+                                           break_dist = 1),
+                                           rect_gp = gpar(col = "gray", lwd = 1),    
+                                           row_names_gp =  gpar(fontsize=8.7),
+                                           column_names_gp = gpar(fontsize=7),
+                                           cluster_columns = F, cluster_rows = T,
+                                           show_column_names = F,
+                                           show_heatmap_legend = TRUE, 
+                                           top_annotation =  c(annorigen, annseccion), 
+                                           left_annotation = c(annlevel2, annscore))
+
+heats.picrust
+draw(heats.picrust, heatmap_legend_side = "top",
+                    annotation_legend_side = "right", 
+                    merge_legend=F,
+                    annotation_legend_list = list(pd.picrust))
+
+heatm.picrust<-grid.grabExpr(draw(heats.picrust, heatmap_legend_side = "top",
+                                  annotation_legend_side = "right", 
+                                  merge_legend=F,
+                                  annotation_legend_list = list(pd.picrust)))
+
+heatm.picrust
+
+
+
+```
+
+
+
+
+
+
