@@ -1,0 +1,291 @@
+---
+title: "Figure 7. Shared diversity"
+author: "Nina Montoya"
+date: "09/10/2023"
+output: 
+ prettydoc::html_pretty:
+    theme: leonids
+    highlight: github
+---
+
+##Shared diversity
+
+####Cargar librerías
+```{r, warning=FALSE, message=FALSE}
+library(betapart)
+library(tidyverse)
+library(reshape2)
+library(ggh4x)
+library(ggpubr)
+library(ggplot2)
+library(tidyverse)
+```
+
+####Cargar data
+#####Archivo de ids unassigned a filtrar de la otu table
+```{r}
+deleteIDS.unassigned <- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/listaASVs.p.filtrar.txt", check.names = F)
+```
+
+#####Metadata
+```{r}
+metadata.transferencia.completo <- read.delim("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/mapa.capII.transferencia.completo.txt", check.names = FALSE) 
+```
+
+#####OTU table
+```{r}
+table_bac <- read.csv("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/otutable.transferencia.completa.filterASVs.csv", row.names = 1, check.names = FALSE) %>%
+  rownames_to_column(var = "OTUID") %>%
+  filter(!OTUID %in% deleteIDS.unassigned$OTUID) %>% 
+  column_to_rownames(var = "OTUID") 
+```
+#####Obtener base de datos sin singletons por muestra
+```{r}
+asv_table <- table_bac 
+asv_table[asv_table>0]=1 
+asv_no_single<-asv_table %>% 
+  filter(rowSums(across(where(is.numeric)))>1) %>% t() %>%
+  as.data.frame() 
+```
+
+#####Obtener el objeto core
+```{r}
+core.beta<- betapart.core (asv_no_single)
+shared<-core.beta$shared
+
+beta.shared <- as.matrix(shared) %>% melt(
+  varnames = c("site1", "site2"))%>% drop_na() %>% filter(!value==0)
+```
+
+#####Unir indices de diversidad beta con metadata
+```{r}
+beta.shared.formato<- beta.shared %>% inner_join(metadata.transferencia.completo, by = c("site1"="OTUID")) %>% inner_join(metadata.transferencia.completo, by = c("site2"="OTUID")) 
+```
+
+#####Elegir las comparaciones deseadas
+```{r}
+comparacion_seccion<-c("Boca_vs_L.amniotico","Boca_vs_Membrana","Boca_vs_Yema","Boca_vs_Tracto.embrionario",
+                       "Cloaca_vs_L.amniotico","Cloaca_vs_Membrana","Cloaca_vs_Yema","Cloaca_vs_Tracto.embrionario",
+                       "Ileon_vs_L.amniotico","Ileon_vs_Membrana","Ileon_vs_Yema","Ileon_vs_Tracto.embrionario",
+                       "Dorso_vs_L.amniotico", "Dorso_vs_Membrana", "Dorso_vs_Yema", "Dorso_vs_Tracto.embrionario")
+
+
+comparacion_hembra.embrion <-c("3_vs_3","7_vs_7","16_vs_16","8_vs_8","12_vs_12") 
+```
+
+#####Subset para obtener comparaciones anteriores 
+```{r}
+beta.shared.final<-beta.shared.formato %>%
+                   unite("compar_seccion", c("Seccion.x","Seccion.y"), sep="_vs_", remove=F) %>%
+                   unite("compar_ID", c("ID.identificador.x", "ID.identificador.y"), sep="_vs_", remove=F) %>%
+                   filter(compar_seccion %in% comparacion_seccion) %>%
+                   filter(compar_ID %in% comparacion_hembra.embrion)
+```
+
+#####Calcúlo con base de datos sin singletones
+```{r}
+asv_no_single$sum <- rowSums(asv_no_single) 
+asv_emb<- asv_no_single %>% rownames_to_column(var="site2")
+asv.emb<-asv_emb[,c(1,257)]
+beta.shared.final2 <- left_join(beta.shared.final, asv.emb, by="site2")
+beta.shared.final2$overlap<- (beta.shared.final2$value/beta.shared.final2$sum)*100   
+```
+
+#####Función para indicar el orden a graficar 
+```{r}
+beta.shared.final2$compar_orden<-factor(beta.shared.final2$compar_seccion,
+                                        levels = c("Boca_vs_Tracto.embrionario",
+                                                   "Boca_vs_L.amniotico",
+                                                   "Boca_vs_Membrana",
+                                                   "Boca_vs_Yema",
+                                                   "Cloaca_vs_Tracto.embrionario",
+                                                   "Cloaca_vs_L.amniotico",
+                                                   "Cloaca_vs_Membrana",
+                                                   "Cloaca_vs_Yema",
+                                                   "Ileon_vs_Tracto.embrionario",
+                                                   "Ileon_vs_L.amniotico",
+                                                   "Ileon_vs_Membrana",
+                                                   "Ileon_vs_Yema",
+                                                   "Dorso_vs_Tracto.embrionario",
+                                                   "Dorso_vs_L.amniotico",
+                                                   "Dorso_vs_Membrana",
+                                                   "Dorso_vs_Yema"))
+```
+
+#####Horizontal strips
+```{r}
+ridiculous_strips <- strip_themed(background_x = elem_list_rect(fill = c("#5D478B", "#8B668B", "#CDB5CD"),
+                                                                by_layer_x = TRUE))
+```
+
+#####Definir color
+```{r}
+color.embrionarias <- c("#2F4F4F", "#698B69", "#458B74", "#B4EEB4")
+```
+
+#####Modificar niveles
+```{r }
+beta.shared.final2$Seccion.x<-factor(beta.shared.final2$Seccion.x, 
+                                          levels = c("Boca", "Cloaca", "Ileon", "Dorso"),
+                                          labels = c("Mouth", "Cloaca", "Small intestine", "Aseptic ventral skin"))
+
+
+
+beta.shared.final2$Seccion.y<-factor(beta.shared.final2$Seccion.y, 
+                                               levels = c("L.amniotico", "Tracto.embrionario", "Membrana", "Yema"),
+                                               labels = c("Amniotic fluid", "Embryonic tract", "Membrane", "Yolk"))
+```
+
+####Boxplot
+```{r, eval=FALSE}
+coordenadas <- read.csv("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/coordenadas.csv", check.names = FALSE)
+
+coordenadas$Seccion.x <- factor(coordenadas$Seccion.x, levels = c("Mouth","Cloaca","Small intestine","Aseptic ventral skin"))
+
+
+beta.shared<-beta.shared.final2 %>% 
+  ggboxplot(x = "Seccion.y", y="overlap", fill="Seccion.y", facet.by = "Seccion.x")+
+  ylab("Percentage of shared ASVs")+
+  scale_fill_manual(values = color.embrionarias)+
+  facet_grid2(.~Seccion.x, scales = "free_x", strip = ridiculous_strips) + 
+  #theme(panel.border = element_rect(color="red", size=2))
+  theme(axis.text.x = element_blank(), axis.ticks.x =element_blank(),
+        axis.text.y = element_text(size = 10),
+        axis.title.y = element_text(size = 12, face = "bold", margin =margin(t=0, r=0.5, b=0, l=0, "cm")),
+        strip.text.x = element_text(size = 10, face = "bold", color = "white"),
+        legend.title = element_blank())+
+  xlab(element_blank())+
+  stat_compare_means(label="p.format", label.x = 2, size=2.8)+
+  geom_text(data = coordenadas, label=coordenadas$label, size=3)
+
+
+beta.shared
+```
+
+#####Guardar figura 
+```{r, eval=FALSE}
+ggsave("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/boxplot.shared.ASvs.tiff",
+       device = "tiff", width=8, height=4, dpi=600)
+```
+
+##Análisis estadístico
+
+#####Explorar
+```{r, eval=FALSE, message=FALSE}
+str(beta.shared.final2)
+```
+
+#####Cambiar a factor, la variable temporada, sexo y sitio
+```{r}
+beta.shared.final2$Seccion.x <- factor(beta.shared.final2$Seccion.x)
+beta.shared.final2$Seccion.y <- factor(beta.shared.final2$Seccion.y)
+```
+
+#####Probar normalidad de los datos (overlap)
+```{r, eval=FALSE}
+qqnorm(beta.shared.final2$overlap)
+qqline(beta.shared.final2$overlap)
+shapiro.test(beta.shared.final2$overlap)
+hist(beta.shared.final2$overlap)
+#Los datos no son normales, hacer glm para datos no paramétricos.
+```
+
+#####Explorar efecto de muestras maternas, embrionarias e interaccion. 
+#####Modelo con efecto de interacción
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+modelo.glm.interaccion.poissson <- glm(overlap ~ Seccion.x*Seccion.y, data = beta.shared.final2, family = poisson())
+summary(modelo.glm.interaccion.poissson)
+
+#Análisis estadístico del modelo
+anova(modelo.glm.interaccion.poissson, test = "F")
+#En este caso, hay efecto significativo por cada efecto individual pero no hay efecto de interacción
+```
+
+#####Observar gráficas del modelo, explorar normalidad
+```{r, eval=FALSE}
+plot(modelo.glm.interaccion.poissson, which = 2)
+#Probar homocedasticidad de varianzas
+bartlett.test(beta.shared.final2$overlap, beta.shared.final2$Seccion.x)
+#Observar lo anterior gráficamente
+plot(modelo.glm.interaccion.poissson, which = 1)
+```
+
+#####Realizar análisis posthoc de cada efecto individual 
+```{r, message=FALSE}
+#Librerías a usar 
+library(PMCMRplus)
+library(PMCMR)
+library(multcompView)
+library(rcompanion)
+library(FSA)
+```
+
+#####Análisis posthoc
+```{r, eval=FALSE}
+dunnTest(overlap ~ Seccion.x, data = beta.shared.final2, method = "bonferroni")
+
+dunnTest(overlap ~ Seccion.y, data = beta.shared.final2, method = "bonferroni")
+#El análisis kruskal wallis arroja efecto significativo en la boca y en la piel ventral aséptica 
+```
+
+#####Realizar subset de boca y piel ventral aséptica
+#####Elegir las comparaciones que deseo, es decir, boca y piel ventral aséptica
+```{r}
+filter_boca<- c("Boca_vs_L.amniotico", "Boca_vs_Membrana", "Boca_vs_Yema", "Boca_vs_Tracto.embrionario")
+
+filter_piel<- c("Dorso_vs_L.amniotico", "Dorso_vs_Membrana", "Dorso_vs_Yema", "Dorso_vs_Tracto.embrionario")
+```
+
+#####Subset para obtener comparaciones anteriores 
+```{r}
+#Base de datos a usar
+#beta.shared.final2
+beta.shared.final3 <- beta.shared.final2 %>% 
+  filter(compar_seccion %in% filter_boca)
+
+beta.shared.final4 <- beta.shared.final2 %>% 
+  filter(compar_seccion %in% filter_piel)
+```
+
+#####Realizar posthoc de cada sección
+```{r, eval=FALSE}
+#boca
+dunnTest(overlap ~ compar_seccion, data = beta.shared.final3, method = "bonferroni")
+#piel ventral aséptica
+dunnTest(overlap ~ compar_seccion, data = beta.shared.final4, method = "bonferroni")
+```
+
+#####Utilizar FSA para agregar letras a subset
+######BOCA
+```{r, warning=FALSE, eval=FALSE}
+library(FSA)
+PT2.BOCA <- dunnTest(overlap ~ compar_seccion, data = beta.shared.final3, method = "bonferroni")
+
+PT3.BOCA<- PT2.BOCA$res
+PT3.BOCA
+```
+
+#####Crear letras
+```{r, eval=FALSE}
+library(rcompanion)
+cldList(P.adj ~ Comparison, data = PT3.BOCA, threshold = 0.05)
+```
+
+
+######PIEL VENTRAL ASÉPTICA
+```{r, eval=FALSE}
+PT2.PIEL <- dunnTest(overlap ~ compar_seccion, data = beta.shared.final4, method = "bonferroni")
+
+PT3.PIEL<- PT2.PIEL$res
+PT3.PIEL
+```
+
+#####Crear letras
+```{r, eval=FALSE}
+cldList(P.adj ~ Comparison, data = PT3.PIEL, threshold = 0.05)
+```
+
+
+
+
+
