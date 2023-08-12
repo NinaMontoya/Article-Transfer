@@ -8,7 +8,7 @@ Figure 4: https://ninamontoya.github.io/Article-Transfer/Figure-4.-PCA.html
 
 Figure 5: https://ninamontoya.github.io/Article-Transfer/Figure-5.-Heatmap-funcional.html
 
-Figure 6: https://ninamontoya.github.io/Article-Transfer/Figure-5.-Venn-Diagram.html 
+Figure 6: https://ninamontoya.github.io/Article-Transfer/Figure-6.-Venn-Diagram.html
 
 Figure 7: https://ninamontoya.github.io/Article-Transfer/Figure-7.-Shared-diversity.html
 
