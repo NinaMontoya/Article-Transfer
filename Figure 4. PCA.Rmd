@@ -1,0 +1,165 @@
+---
+title: "Figure 4. PCA"
+author: "Nina Montoya"
+date: "13/4/2023"
+output:
+  prettydoc::html_pretty:
+    theme: leonids
+    highlight: vignette
+---
+
+##PCA COMPLETO DE 3 COMPONENTES
+
+####Cargar librerías
+```{r, warning=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+####Cargar data
+#####Puntos
+```{r}
+puntos.PC3.completo<- read.csv("data/puntos.PC3.completo.csv", check.names= F)
+```
+
+#####Vectores
+```{r}
+vectores.PC3.completo <- read.csv("data/vectores.PC3.completo.csv", check.names= F) %>% rename(OTUID=Species)
+```
+
+#####Matriz de distancia
+```{r, eval=FALSE}
+matriz.distancia.PC3.completo <- read.delim("data/distance-matrix.PC3.completo.tsv", check.names = F, row.names = 1)
+```
+
+#####Taxonomía
+```{r}
+taxonomia<- read.delim("data/taxonomy.tsv", check.names = F)
+```
+
+#####ASV´s vectores
+```{r, warning=FALSE, message=FALSE}
+asvs_vector<- read.delim("data/asvs.vectores.txt", header = F) %>% separate(V1, c("OTUID", "taxa"))
+
+vars<- asvs_vector %>% inner_join(vectores.PC3.completo) %>% inner_join(taxonomia)
+```
+
+#####Metadata
+```{r, warning=FALSE, message=FALSE}
+metadata.transferencia.completo<-read.csv("data/metadata.transf.2600.matriz.csv", check.names = FALSE)
+
+#Cambiar el nombre de la columna 15 por "Hembra"
+colnames(metadata.transferencia.completo)[15]<- "Hembra"
+```
+
+#####Declarar y cambiar condiciones para el plot 
+```{r, warning=FALSE, message=FALSE}
+metadata.transferencia.completo <- metadata.transferencia.completo %>%
+mutate_at(c("Seccion"),funs(Seccion2=case_when(Seccion=="Boca"~"Mouth",
+                                                Seccion=="Cloaca"~"Cloaca",
+                                                Seccion=="Dorso"~"Aseptic ventral skin",
+                                                Seccion=="Ileon"~"Small intestine",
+                                                Seccion=="L.amniotico"~"Amniotic fluid",
+                                                Seccion=="Membrana"~"Membrane", 
+                                                Seccion=="Tracto.embrionario"~"Embryonic tract",
+                                                Seccion=="Yema"~"Yolk", TRUE~as.character(Seccion))))
+
+```
+
+#####Cambiar a factor, la variable Sección
+```{r,eval=FALSE}
+str(metadata.transferencia.completo)
+metadata.transferencia.completo$Seccion2<-factor(metadata.transferencia.completo$Seccion2)
+```
+
+#####Definir colores 
+```{r}
+colors.myorden <- c("#2F4F4F","#698B69","#458B74","#B4EEB4","#5D478B","#8B668B",
+                    "#CDB5CD","#4A708B")
+```
+
+#####Definir niveles
+```{r}
+PC1.C3.completo <- paste("PC1", "55.86", "%")
+PC2.C3.completo <- paste("PC2", "32.68", "%")
+```
+
+```{r}
+puntos.robusto.PC3<- data.frame(puntos.PC3.completo) %>% 
+                     inner_join(metadata.transferencia.completo, by = "OTUID")
+
+puntos.robusto.PC3$orden<-factor(puntos.robusto.PC3$Seccion2,levels=c("Amniotic fluid",
+                                                                      "Embryonic tract","Membrane","Yolk",
+                                                                      "Mouth","Cloaca","Small intestine",
+                                                                      "Aseptic ventral skin"))
+```
+
+####Figura por sección 
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
+PCA_robustoPC3.completo <- ggplot()+
+  theme_bw() +
+  xlab(PC1.C3.completo) +
+  ylab(PC2.C3.completo) +
+  theme(axis.text = element_text(colour = "black", size = 12),
+        axis.title = element_text(colour = "black", size = 12, face = "bold"),
+        legend.text = element_text(size = 12),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        axis.ticks = element_line(colour = "black"),
+        axis.line = element_line(colour = "black"),
+        axis.text.y.right = element_text(colour = "black"),
+        axis.text.x.top = element_text(colour = "black"),
+        legend.position = "right", 
+        legend.box = "vertical",
+        legend.direction = "vertical",
+        legend.spacing.y = unit(0.01, 'cm'),
+        panel.border = element_rect(color = "black", size = 1.5),
+        legend.title = element_blank()) + 
+  geom_point(data = puntos.robusto.PC3,
+             aes(x=PC1, y=PC2, fill=orden), shape=21, size= 4) +
+  #geom_text(data = data.frame(pca.transferencia$x) %>% rownames_to_column(var = "ID") %>%
+  #left_join(metadata.transf.2600.filter, by = "ID"),
+  #aes(x=PC1, y=PC2, fill=Seccion,label= ID)) +
+  geom_vline(xintercept = 0, linetype = 3) + #lines-cross 
+  geom_hline(yintercept = 0, linetype = 3) +
+  scale_fill_manual(values = colors.myorden)+
+  #scale_x_continuous(limits = c(-0.3,0.3))+
+  #scale_y_continuous(limits = c(-0.3,0.3))+
+  theme(legend.text = element_text(size = 12),legend.position = "right",
+        legend.direction="vertical")+
+  geom_segment(data = vars, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
+               arrow=arrow(length=unit(0.15,"cm")),
+               alpha = 0.75, color = 'black', size= 0.6)+
+  ggrepel::geom_label_repel(data = vars, aes(x=PC1, y=PC2, label= taxa),
+                            segment.colour = NA, col = 'black', fill= "#EEEEEE",
+                            fontface="bold.italic",  box.padding = 0.6, size=4)
+
+```
+
+#####Observar PCA 
+```{r, eval=FALSE}
+print(PCA_robustoPC3.completo)
+```
+
+####perMANOVA por sección bloqueando a la madre y embrión
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
+library(vegan)
+permanova.Seccion.PC3.completo<-with(metadata.transferencia.completo,
+                            adonis2(matriz.distancia.PC3.completo ~ Seccion, data = metadata.transferencia.completo,
+                            method = "euclidean", permutations = 999, strata = embrion))
+
+
+print(permanova.Seccion.PC3.completo)
+```
+
+####Guardar figura
+```{r,eval=FALSE}
+ggsave("/Users/ninamontoya/Desktop/Analisis.2022/analisisR/analisis.final/PCA.completo.tiff", 
+        width = 8.5, height = 5, dpi = 600, device = "tiff")
+```
+
+
+
+
+
+
+
