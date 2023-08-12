@@ -1,0 +1,304 @@
+---
+title: "Figure 6. Venn Diagram"
+author: "Nina Montoya"
+date: "11/4/2023"
+output:
+  prettydoc::html_pretty:
+    theme: leonids
+    highlight: vignette
+---
+##Diagrama de Venn 
+
+####Cargar librerías 
+```{r, warning=FALSE, message=FALSE}
+library(phyloseq)
+library(microbiomeutilities)
+library(microbiome)
+library(magrittr)
+library(convertGraph)
+library(tidyverse)
+library(VennDiagram)
+library(dplyr)
+```
+
+####Cargar data
+#####Archivo de ids unassigned a filtrar de la otu table
+```{r}
+deleteIDS.unassigned <- read.delim("data/listaASVs.p.filtrar.txt", check.names = FALSE)
+```
+
+#####Metadata
+```{r}
+meta <- read.delim("data/mapa.capII.transferencia.completo.txt", check.names = FALSE) 
+```
+
+#####OTU table
+```{r}
+table_bac <- read.csv("data/otutable.transferencia.completa.filterASVs.csv", row.names = 1, check.names = FALSE) %>%
+                      rownames_to_column(var = "OTUID") %>%
+                      filter(!OTUID %in% deleteIDS.unassigned$OTUID) %>% 
+                      column_to_rownames(var = "OTUID") 
+```
+
+#####Con base de datos sin singletons por muestra
+```{r}
+asv_table <- table_bac 
+asv_table[asv_table>0]=1 
+asv_no_single<-asv_table %>% 
+               filter(rowSums(across(where(is.numeric)))>1) %>%
+               t() %>%
+               as.data.frame() 
+```
+
+#####Sacar incidencia por sección
+```{r}
+seccion_no_single<- asv_no_single %>%
+                    rownames_to_column(var = "OTUID") %>%
+                    inner_join(meta, by="OTUID") %>% 
+                    dplyr::select('c203ab075235382ec1c23c22c02f255a':'9db2817f5c42be6a7bcbca662959982d',Seccion) %>%
+                    group_by(Seccion) %>%
+                    summarise_if(is.numeric, sum) %>%
+                    column_to_rownames(var = "Seccion") %>%
+                    t() %>% 
+                    as.data.frame()
+```
+
+#####Función para generar los sets del diagrama de venn
+```{r}
+get_set <- function(data, varName){
+  varName <- enquo(varName)
+  
+  data %>%
+  rownames_to_column(., var = "ID") %>%
+  filter(!!varName > 0) %>%
+  select(ID) %>%
+  # Extrae una sola columna y la convierte en un vector
+  pull()}
+```
+
+####MEMBRANE
+-Colores del diagrama de venn
+```{r, eval=FALSE}
+dath_venn_region.ME <- c("#458B74","#5D478B", "#8B668B", "#CDB5CD", "#4A708B")
+venn.diagram(x = list(get_set(seccion_no_single, Membrana),
+                      get_set(seccion_no_single, Boca),
+                      get_set(seccion_no_single, Cloaca),
+                      get_set(seccion_no_single, Ileon),
+                      get_set(seccion_no_single, Dorso)),
+                      category.names = c("Membrane","Mouth","Cloaca","Small intestine",
+                                         "Aseptic ventral \n skin"),
+                      filename = 'venn_ME.png',
+                      output = TRUE, 
+                      # Output features
+                      imagetype = "png",
+                      resolution = 300,
+                      # Circles
+                      lty = 1,
+                      compression = "lzw",
+                      units = "px",
+                      lwd = 2,
+                      col = c("black","black","black","black","black"),
+                      fill = dath_venn_region.ME,
+                      # Numbers
+                      cex = 2,
+                      fontfamily ="sans",
+                      fontface = "bold",
+                      # Names
+                      cat.cex = 1.85, 
+                      cat.default.pos = "outer",
+                      #cat.dist = c(0.055, 0.070, 0.055 , 0.055, 0.070),
+                      cat.pos = c(-5,5,180,-160,-190),
+                      cat.dist = c(0.055, 0.065, 0.040, 0.060, 0.070),
+                      cat.fontfamily = "sans",
+                      disable.logging = TRUE)
+```
+####AMNIOTIC FLUID
+-Colores del diagrama de venn
+```{r, eval=FALSE}
+dath_venn_region.LA <- c("#2F4F4F","#5D478B", "#8B668B", "#CDB5CD", "#4A708B")
+venn.diagram(x = list(get_set(seccion_no_single, L.amniotico),
+                      get_set(seccion_no_single, Boca),
+                      get_set(seccion_no_single, Cloaca),
+                      get_set(seccion_no_single, Ileon),
+                      get_set(seccion_no_single, Dorso)),
+                      category.names = c("Amniotic fluid","Mouth","Cloaca",
+                                         "Small intestine","Aseptic ventral \n skin"),
+                      filename = 'venn_LA.png',
+                      output = TRUE, 
+                      # Output features
+                      imagetype = "png",
+                      resolution = 300,
+                      # Circles
+                      lty = 1,
+                      compression = "lzw",
+                      units = "px",
+                      lwd = 2,
+                      col = c("black","black","black","black","black"),
+                      fill = dath_venn_region.LA,
+                      # Numbers
+                      cex = 2,
+                      fontfamily ="sans",
+                      fontface = "bold",
+                      # Names
+                      cat.cex = 1.86, 
+                      cat.default.pos = "outer",
+                      #cat.dist = c(0.055, 0.070, 0.055 , 0.055, 0.070),
+                      cat.pos = c(-5,5,180,-160,-190),
+                      cat.dist = c(0.055, 0.065, 0.040, 0.060, 0.070),
+                      cat.fontfamily = "sans",
+                      disable.logging = TRUE)
+```
+####EMBRYONIC TRACT
+-Colores del diagrama de venn
+```{r, eval=FALSE}
+dath_venn_region.TE <- c("#698B69","#5D478B", "#8B668B", "#CDB5CD", "#4A708B")
+venn.diagram(x = list(get_set(seccion_no_single, Tracto.embrionario),
+                      get_set(seccion_no_single, Boca),
+                      get_set(seccion_no_single, Cloaca),
+                      get_set(seccion_no_single, Ileon),
+                      get_set(seccion_no_single, Dorso)),
+                      category.names = c("Embrionic tract","Mouth","Cloaca",
+                                          "Small intestine","Aseptic ventral \n skin"),
+                      filename = 'venn_TE.png',
+                      output = TRUE, 
+                      # Output features
+                      imagetype = "png",
+                      resolution = 300,
+                      # Circles
+                      lty = 1,
+                      compression = "lzw",
+                      units = "px",
+                      lwd = 2,
+                      col = c("black","black","black","black","black"),
+                      fill = dath_venn_region.TE,
+                      # Numbers
+                      cex = 2,
+                      fontfamily ="sans",
+                      fontface = "bold",
+                      # Names
+                      cat.cex = 1.85, 
+                      cat.default.pos = "outer",
+                      #cat.dist = c(0.055, 0.070, 0.055 , 0.055, 0.070),
+                      cat.pos = c(-0,5,180,-160,-190),
+                      cat.dist = c(0.055, 0.065, 0.040, 0.060, 0.070),
+                      cat.fontfamily = "sans",
+                      disable.logging = TRUE)
+```
+####YOLK
+-Colores del diagrama de venn
+```{r, eval=FALSE}
+dath_venn_region.YE <- c("#B4EEB4","#5D478B", "#8B668B", "#CDB5CD", "#4A708B")
+venn.diagram(x = list(get_set(seccion_no_single, Yema),
+                      get_set(seccion_no_single, Boca),
+                      get_set(seccion_no_single, Cloaca),
+                      get_set(seccion_no_single, Ileon),
+                      get_set(seccion_no_single, Dorso)),
+                      category.names = c("Yolk","Mouth","Cloaca","Small intestine",
+                                         "Aseptic ventral \n skin"),
+                      filename = 'venn_Yema.png',
+                      output = TRUE, 
+                      # Output features
+                      imagetype = "png",
+                      resolution = 300,
+                      # Circles
+                      lty = 1,
+                      compression = "lzw",
+                      units = "px",
+                      lwd = 2,
+                      col = c("black","black","black","black","black"),
+                      fill = dath_venn_region.YE,
+                      # Numbers
+                      cex = 2,
+                      fontfamily ="sans",
+                      fontface = "bold",
+                      # Names
+                      cat.cex = 1.85, 
+                      cat.default.pos = "outer",
+                      #cat.dist = c(0.055, 0.070, 0.055 , 0.055, 0.070),
+                      cat.pos = c(-5,5,180,-160,-190),
+                      cat.dist = c(0.055, 0.065, 0.040, 0.060, 0.070),
+                      cat.fontfamily = "sans",
+                      disable.logging = TRUE)
+  
+```
+
+###Diagrama Global
+####MOTHER vs EMBRYO
+#####Sacar incidencia por sexo
+```{r, eval=FALSE}
+sexo_no_single<- asv_no_single %>%
+                 rownames_to_column(var = "OTUID") %>%
+                 inner_join(meta, by="OTUID")  %>% 
+                 dplyr::select('c203ab075235382ec1c23c22c02f255a':'9db2817f5c42be6a7bcbca662959982d', Sexo) %>% 
+                 group_by(Sexo) %>%
+                 summarise_if(is.numeric, sum) %>%
+                 column_to_rownames(var = "Sexo") %>%
+                 t() %>%
+                 as.data.frame()
+
+```
+-Colores del diagrama de venn
+```{r, eval=FALSE}
+dath_venn_region.global <- c("darkseagreen","thistle3")
+ venn.diagram(x = list(get_set(sexo_no_single, Embrion),
+                       get_set(sexo_no_single, Hembra)),
+                       category.names = c("Embryo", "Mother"),
+                       filename = 'venn_embryovsmother.png',
+                       output = FALSE, 
+                       # Output features
+                       imagetype = "png",
+                       resolution = 300,
+                       # Circles
+                       lty = 1,
+                       compression = "lzw",
+                       units = "px",
+                       lwd = 2.5,
+                       col = c("black", "black"), 
+                       fill = dath_venn_region.global,
+                       #cat.col = c("black", 'black'),
+                       # Numbers
+                       cex = 4,
+                       fontfamily ="sans",
+                       fontface = "bold",
+                       # Names
+                       cat.cex = 5, 
+                       cat.default.pos = "outer",
+                       cat.dist = c(0.055, 0.055),
+                       cat.pos = c(-20,20),
+                       cat.fontfamily = "sans",
+                       disable.logging = TRUE)
+```
+
+###Identificar las asvs exlusivas del embrión (no compartidas con la madre), madre y compartidas.
+####Taxonomía
+```{r}
+taxonomia<- read.delim("data/taxonomy.tsv", check.names = F)
+```
+
+####ASV´s exclusivas del embrión
+```{r, eval=FALSE, message=FALSE}
+sexo_no_single
+exclusive_embrion<- subset(sexo_no_single, Hembra=="0") %>%
+                    rownames_to_column(var = "OTUID") %>%
+                    left_join(taxonomia)
+```
+
+####ASV´s exclusivas de la madre
+```{r, eval=FALSE, message=FALSE}
+sexo_no_single
+exclusive_mother <- subset(sexo_no_single, Embrion=="0") %>% 
+                    rownames_to_column(var = "OTUID") %>%
+                    left_join(taxonomia)
+```
+
+####ASV´s compartidas 
+```{r, eval=FALSE, message=FALSE}
+sexo_no_single
+compartidas <- subset(sexo_no_single, Embrion>0 & Hembra>0) %>%
+               rownames_to_column(var = "OTUID") %>%
+               left_join(taxonomia)
+```
+
+
+
+
