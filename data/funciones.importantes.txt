@@ -1,0 +1,51 @@
+description	importance	porcentaje
+CMP-legionaminate biosynthesis I	0.020790379	2.0790379
+L-arabinose degradation IV	0.017055667	1.7055667
+2-nitrobenzoate degradation I	0.016108151	1.6108151
+ethylmalonyl-CoA pathway	0.012300002	1.2300002
+2-amino-3-carboxymuconate semialdehyde degradation to 2-oxopentenoate	0.011840802	1.1840802
+superpathway of phenylethylamine degradation	0.0108544	1.08544
+L-tryptophan degradation IX	0.010268775	1.0268775
+4-aminobutanoate degradation V	0.009864616	0.9864616
+mandelate degradation I	0.009762471	0.9762471
+catechol degradation II (meta-cleavage pathway)	0.009665886	0.9665886
+photorespiration	0.009610378	0.9610378
+pyruvate fermentation to acetone	0.009419906	0.9419906
+pyrimidine deoxyribonucleotides de novo biosynthesis III	0.009367373	0.9367373
+pyruvate fermentation to acetate and lactate II	0.009325742	0.9325742
+superpathway of menaquinol-9 biosynthesis	0.009286695	0.9286695
+catechol degradation to 2-oxopent-4-enoate II	0.009232115	0.9232115
+dTDP-N-acetylthomosamine biosynthesis	0.008936435	0.8936435
+"L-1,2-propanediol degradation"	0.008748978	0.8748978
+superpathway of aerobic toluene degradation	0.00863117	0.863117
+mandelate degradation to acetyl-CoA	0.008505469	0.8505469
+nitrate reduction I (denitrification)	0.008426916	0.8426916
+enterobacterial common antigen biosynthesis	0.007955002	0.7955002
+chlorosalicylate degradation	0.007823562	0.7823562
+reductive TCA cycle I	0.007359138	0.7359138
+superpathway of chorismate metabolism	0.007144235	0.7144235
+ADP-L-glycero-&beta;-D-manno-heptose biosynthesis	0.007063555	0.7063555
+superpathway of demethylmenaquinol-9 biosynthesis	0.006990326	0.6990326
+L-tryptophan degradation to 2-amino-3-carboxymuconate semialdehyde	0.006901257	0.6901257
+Bifidobacterium shunt	0.006865055	0.6865055
+nitrate reduction VI (assimilatory)	0.006673088	0.6673088
+myo-inositol degradation I	0.006672382	0.6672382
+superpathway of heme biosynthesis from glycine	0.006626939	0.6626939
+"1,4-dihydroxy-6-naphthoate biosynthesis II"	0.006618193	0.6618193
+"myo-, chiro- and scillo-inositol degradation"	0.006428817	0.6428817
+toluene degradation IV (aerobic) (via catechol)	0.006420095	0.6420095
+NAD biosynthesis II (from tryptophan)	0.006340873	0.6340873
+benzoyl-CoA degradation I (aerobic)	0.006339222	0.6339222
+superpathway of menaquinol-6 biosynthesis I	0.006144048	0.6144048
+heterolactic fermentation	0.006115722	0.6115722
+succinate fermentation to butanoate	0.005988871	0.5988871
+gallate degradation I	0.005939713	0.5939713
+L-leucine degradation I	0.005916923	0.5916923
+fucose degradation	0.005913145	0.5913145
+thiazole biosynthesis II (Bacillus)	0.005896917	0.5896917
+vanillin and vanillate degradation I	0.005818144	0.5818144
+superpathway of demethylmenaquinol-6 biosynthesis II	0.005525563	0.5525563
+vanillin and vanillate degradation II	0.005510001	0.5510001
+superpathway of menaquinol-10 biosynthesis	0.005394989	0.5394989
+superpathway of fucose and rhamnose degradation	0.005384111	0.5384111
+superpathway of demethylmenaquinol-6 biosynthesis I	0.005331638	0.5331638

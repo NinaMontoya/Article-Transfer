@@ -1,0 +1,9 @@
+27f2c61858082d5f84b7a3f0a20bb9a5 , Curvibacter lanceolatus
+387349bbf301de818017a263010277fa, Stenotrophomonas
+501ef6cc75fb160180e332ba60a60df8, Hafnia paralvei
+d1316b26e5350da36e6456499ecdfe18, Micrococcaceae
+a16986411ff8c5714b2ba245262b5f95, Lachnospiraceae
+d486760d6f805ff543544452ff88b539, Stenotrophomonas rhizophila
+8a573680a1bdcad765a979c0819b7fab, Helicobacter 
+538a70646ffd175cea2685f78bc317cb, Enterobacteriaceae
+31de3d22f5b19325735267725f1f49e8, Lachnoclostridium
