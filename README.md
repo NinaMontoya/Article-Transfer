@@ -10,6 +10,6 @@ Figure 5: https://ninamontoya.github.io/Article-Transfer/Figure-4.-Heatmap-funci
 
 Figure 6: https://ninamontoya.github.io/Article-Transfer/Figure-5.-Venn-Diagram.html 
 
-Figure 7: 
+Figure 7: https://ninamontoya.github.io/Article-Transfer/Figure-7.-Shared-diversity.html
 
 PCA supplementary: https://ninamontoya.github.io/Article-Transfer/PCA-supplementary.html
